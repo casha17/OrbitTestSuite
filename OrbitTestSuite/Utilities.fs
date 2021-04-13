@@ -1,12 +1,13 @@
 namespace OrbitTestSuite.Utilities
+open OrbitTestSuite.Models
 
-open HttpFs.Client
-open Hopac
+module Utilities = 
 
-module Utilties =
+    let concatString x = 
+        String.concat "" x
     
-    let getUrl parameter userId = "http://localhost:8085/" + parameter + "?userId=" +  userId
-    let GetRequests parameter userId  =
-        Request.createUrl Get (getUrl parameter userId) 
-        |> Request.responseAsString
-        
+    let rec compareFilesMetadata (xl:List<APIModels.metadata>) (yl:List<inMemoryModels.inMemoryFile>) = 
+        match xl, yl with 
+        | [], [] -> true
+        | x::xs, y::ys -> x.id = y.metadata.id && compareFilesMetadata xs ys
+        | _ -> false

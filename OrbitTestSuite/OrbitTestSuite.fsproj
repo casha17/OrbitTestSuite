@@ -4,12 +4,13 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Models.fs" />
     <Compile Include="Utilities.fs" />
-    <Compile Include="BasicHttpTest.fs" />
-    <Compile Include="HttpExample.fs" />
+    <Compile Include="API.fs" />
+    <Compile Include="ConfigureModel.fs" />
     <Compile Include="directoryget.fs" />
-    <Compile Include="CounterTest.fs" />
     <Compile Include="TestSuite.fs" />
+    <Compile Include="InMemoryModel.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
