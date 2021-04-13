@@ -4,6 +4,7 @@ open System.Net
 open Hopac
 open HttpFs.Client
 open FSharp.Json
+open OrbitTestSuite.Utilities
 
 module Http =
     
@@ -23,9 +24,10 @@ module Http =
 
         
     let bodyContent =
-        Request.createUrl Get "http://localhost:8085/dir/structure?userId=100"
-        |> Request.responseAsString
+        (Utilties.GetRequests "/dir/structure" "200")
         |> run
         
-    let getContent = Json.deserialize<list<RecordType>> bodyContent
+    printf "%A" bodyContent
+   // let getContent = Json.deserialize<list<RecordType>> bodyContent
+    
     
