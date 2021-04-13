@@ -14,8 +14,6 @@ module testSuite =
 
 
     let generateStrings = Gen.constant "100" |> Gen.sample 0 10 |> List.head 
-
-
     
     let startTestSuite = 
         
@@ -31,8 +29,6 @@ module testSuite =
             member __.InitialModel = inMemoryModel
             member __.Next model = Gen.elements [ getFiles;] }
 
-
-    
     let config =  {Config.Quick with MaxTest = 1}
     type stateTest =
         static member ``test2`` = Command.toProperty startTestSuite 

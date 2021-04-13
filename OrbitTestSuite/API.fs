@@ -4,6 +4,7 @@ open Hopac
 open HttpFs.Client
 
 open FSharp.Json
+open OrbitTestSuite.API
 open OrbitTestSuite.Models
 module API =
 
@@ -50,59 +51,127 @@ module API =
         }
 
     let fileMetaInformationByFileId userId fileId = 
-        Request.createUrl Get (concatString ["http://localhost:8085/file/meta?userId="; userId;  "&id=";  fileId]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.metadata>
-
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/file/meta?userId="; userId;  "&id=";  fileId])
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.metadata>
+           
+        {
+            data = data
+            response = result
+        }
 
     let fileMetaInformationByFileName userId parentId fileName = 
-        Request.createUrl Get (concatString ["http://localhost:8085/file/meta?userId="; userId;  "&parent_id=";  parentId; "&name="; fileName]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.metadata>
+        
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/file/meta?userId="; userId;  "&parent_id=";  parentId; "&name="; fileName]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.metadata>
 
+        {
+            data = data
+            response = result
+        }
 
     let directoryStructure userId = 
-        Request.createUrl Get (concatString ["http://localhost:8085/dir/structure?userId="; userId;])
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<List<APIModels.directoryStructure>>
-
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/dir/structure?userId="; userId;])
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<List<APIModels.directoryStructure>>
+        {
+            data = data
+            response = result
+        }
 
     let versionCheck userId clientVersion = 
-        Request.createUrl Get (concatString ["http://localhost:8085/version?userId="; userId;  "&version=";  clientVersion]) 
-        |> Request.responseAsString
-        |> run
-
+        
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/version?userId="; userId;  "&version=";  clientVersion]) 
+            |> getResponse
+            |> run
+        {
+            response = result
+            data = ()
+        }
     
-
     let createFile userId parentId fileName fileTimestamp = 
-        Request.createUrl Get (concatString ["http://localhost:8085/file?userId="; userId;  "&parent_id=";  parentId; "&name="; fileName; "&timestamp="; fileTimestamp]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.createFile>
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/file?userId="; userId;  "&parent_id=";  parentId; "&name="; fileName; "&timestamp="; fileTimestamp]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.createFile>
+        {
+            response = result
+            data = data
+        }   
 
     let fileMove userId fileId fileVersion parentId newFilename = 
-        Request.createUrl Get (concatString ["http://localhost:8085/file/move?userId="; userId;  "&id=";  fileId; "&version="; fileVersion; "&parentId="; parentId; "&name="; newFilename]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.moveFile>
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/file/move?userId="; userId;  "&id=";  fileId; "&version="; fileVersion; "&parentId="; parentId; "&name="; newFilename]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.moveFile>
+        
+        {
+            response = result
+            data = data
+        }
 
     let updateFileTimestamp userId fileId fileVersion fileTimestamp = 
-        Request.createUrl Get (concatString ["http://localhost:8085/file/timestamp?userId="; userId;  "&id=";  fileId; "&version="; fileVersion; "&timestamp="; fileTimestamp]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.updateFileTimeStamp>
-
-    (* 
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/file/timestamp?userId="; userId;  "&id=";  fileId; "&version="; fileVersion; "&timestamp="; fileTimestamp]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.updateFileTimeStamp>
+        
+        {
+            data = data
+            response = result
+        }
+    
     let fileupload content userId fileId version timestamp =
-        Request.createUrl Post (Utilities.concatString  ["http://localhost:8085/file/upload?userId="; userId; "&id="; fileId; "&version="; version;"&timestamp="; timestamp;])
-        |> Request.bodyString content
-        |> HttpFs.Client.getResponse 
-        |> run    
-        |> Json.deserialize<APIModels.fileUpload>
-    *)
+        let result =
+            Request.createUrl Post (concatString  ["http://localhost:8085/file/upload?userId="; userId; "&id="; fileId; "&version="; version;"&timestamp="; timestamp;])
+            |> getResponse    
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.fileUpload>
+        
+        {
+            data = data
+            response = result
+        }
+    
     type lockState  = Lock | Release
 
     let intepretLockState lockState = match lockState with 
@@ -110,33 +179,81 @@ module API =
         | Release -> "release"
         
     let fileLock userId directoryId fileName lockState = 
-        Request.createUrl Get (concatString ["http://localhost:8085/file/lock?userId="; userId;  "&parentId=";  directoryId; "&fileName="; fileName; "&state="; (intepretLockState lockState)]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.fileLock>
-
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/file/lock?userId="; userId;  "&parentId=";  directoryId; "&fileName="; fileName; "&state="; (intepretLockState lockState)]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.fileLock>
+        
+        {
+            data = data
+            response = result
+        }
 
     let directoryCreate userId directoryId directoryName directoryVersion = 
-        Request.createUrl Get (concatString ["http://localhost:8085/dir?userId="; userId;  "&parentId=";  directoryId; "&name="; directoryName; "&version="; directoryVersion]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.directoryCreate>
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/dir?userId="; userId;  "&parentId=";  directoryId; "&name="; directoryName; "&version="; directoryVersion]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.directoryCreate>
+        
+        {
+            data = data
+            response = result
+        }
 
     let directoryMove userId directoryId directoryVersion directoryName parentDirectoryId parentDirectoryVersion = 
-        Request.createUrl Get (concatString ["http://localhost:8085/dir/move?userId="; userId;  "&id=";  directoryId; "&version="; directoryName; "&name="; directoryVersion; "&parentId="; parentDirectoryId; "&parentVersion="; parentDirectoryVersion]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.directoryMove>
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/dir/move?userId="; userId;  "&id=";  directoryId; "&version="; directoryName; "&name="; directoryVersion; "&parentId="; parentDirectoryId; "&parentVersion="; parentDirectoryVersion]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.directoryMove>
+        
+        {
+            data = data
+            response = result
+        }
 
     let fileDelete userId fileId fileVersion = 
-        Request.createUrl Get (concatString ["http://localhost:8085/file?userId="; userId;  "&id=";  fileId; "&version="; fileVersion]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.fileDelete>
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/file?userId="; userId;  "&id=";  fileId; "&version="; fileVersion]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.fileDelete>
 
-
+        {
+            data = data
+            response = result
+        }
+    
     let directoryDelete userId directoryId directoryVersion = 
-        Request.createUrl Get (concatString ["http://localhost:8085/dir?userId="; userId;  "&id=";  directoryId; "&version="; directoryVersion]) 
-        |> Request.responseAsString
-        |> run
-        |> Json.deserialize<APIModels.directoryDelete>
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/dir?userId="; userId;  "&id=";  directoryId; "&version="; directoryVersion]) 
+            |> getResponse
+            |> run
+        
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.directoryDelete>
+        
+        {
+            data = data
+            response = result
+        }
