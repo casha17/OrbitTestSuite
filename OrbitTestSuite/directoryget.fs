@@ -118,7 +118,7 @@ module directoryget =
     let chooseFromList (fileList:fileList) = 
         gen { let! i = Arb.generate<fileList>
         return i }
-
+(* 
     type Counter(?initial:fileList) =
         member __.uploadFile(content) = fileupload content
         member __.getFile() = file
@@ -146,10 +146,10 @@ module directoryget =
                 member __.Actual() = new Counter(initialValue)
                 member __.Model() = initialValue }
         { new Machine<Counter,fileList>() with
-            member __.Setup = ?? 
+            member __.Setup = Arb.generate<fileList>
             member __.Next _ = Gen.elements [  uploadFile; getFile ] }
     
-    (* 
+*)
     type HashTable() =
         let mutable file = ""
         member __.Get = file
@@ -170,4 +170,3 @@ module directoryget =
             member __.Next model =  Gen.elements  [ Gen.sized (fun s -> Gen.resize (min s 15) Arb.generate<string>) |> Gen.sample 80 5 |> List.first |>  FileUpload;] }
     
     
-    *)
