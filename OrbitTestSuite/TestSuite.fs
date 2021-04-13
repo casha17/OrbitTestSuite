@@ -3,7 +3,7 @@ namespace OrbitTestSuite.TestSuite
 open FsCheck
 open FsCheck.Experimental
 
-open OrbitTestSuite.directoryget
+
 open OrbitTestSuite.Models
 open OrbitTestSuite.API
 open OrbitTestSuite.Utilities
