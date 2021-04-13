@@ -2,6 +2,8 @@ namespace OrbitTestSuite.ConfigureModel
 
 open OrbitTestSuite.API
 open OrbitTestSuite.Models
+
+open OrbitTestSuite.InMemoryModel
 open type inMemoryModels.user
 open type inMemoryModels.inMemoryFile
 module ConfigureModel = 
@@ -19,7 +21,7 @@ module ConfigureModel =
         | el::els ->  
             let result = (API.downloadFile userId (string el.id))
             {
-                content = result.content
+                content = result.data
                 metadata = el
             }::getFileContent els userId
 
@@ -27,8 +29,8 @@ module ConfigureModel =
         let model = inMemoryModels.inMemoryModel()
         model.setUser TempUser
         let listFilesResult = API.listFiles (string model.GetUser.id)
-        model.appendFiles (getFileContent listFilesResult.fileList (string model.GetUser.id))
+        model.appendFiles (getFileContent listFilesResult.data.fileList (string model.GetUser.id))
         model.appendDirectories (API.directoryStructure (string model.GetUser.id))
-        model.setDirectoryVersions (listFilesResult.directoryVersions)
+        model.setDirectoryVersions (listFilesResult.data.directoryVersions)
         model
         

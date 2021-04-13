@@ -5,12 +5,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Models.fs" />
-    <Compile Include="Utilities.fs" />
     <Compile Include="API.fs" />
-    <Compile Include="ConfigureModel.fs" />
     <Compile Include="directoryget.fs" />
-    <Compile Include="TestSuite.fs" />
     <Compile Include="InMemoryModel.fs" />
+    <Compile Include="Utilities.fs" />
+    <Compile Include="ConfigureModel.fs" />
+    <Compile Include="TestSuite.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

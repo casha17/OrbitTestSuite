@@ -3,6 +3,9 @@ namespace OrbitTestSuite.InMemoryModel
 open OrbitTestSuite.Models
 open OrbitTestSuite.API
 open OrbitTestSuite.Models.APIModels
+
+open HttpFs.Client
+
 module inMemoryModels = 
 
 
@@ -31,8 +34,12 @@ module inMemoryModels =
             initials = ""
         }
         
-        let mutable (getFilesResponse:BaseResponse<listFilesResponse>)
-        
+        let mutable (FilesResponse:API.BaseResponse<listFilesResponse>) = 
+            {
+                data = Unchecked.defaultof<listFilesResponse>
+                response = Unchecked.defaultof<Response>
+            }
+
         
         
         member __.GetFiles = files
@@ -44,4 +51,5 @@ module inMemoryModels =
         member __.setUser newUser = user <- newUser
         member __.setDirectoryVersions newVersions = directoryVersions <- newVersions
         member __.ToString = printf "Files: \n\n %A  Directories: \n\n %A User: \n\n %A" files directories user
-        member __.GetFilesAPI userId = getFilesResponse <- API.listFiles userId
+        member __.GetFilesResponse = FilesResponse
+        member __.GetFilesAPI userId = FilesResponse <- API.listFiles userId
