@@ -31,34 +31,12 @@ module testSuite =
             member __.InitialModel = inMemoryModel
             member __.Next model = Gen.elements [ getFiles;] }
 
-    
-    
-   
 
-    (*
-    let spec =
-        let inc = 
-            { new Operation<inMemoryModels.inMemoryModel,int>() with
-                member __.Run m = m + 1
-                member __.Check (c,m) = 
-                    let res = c.Inc() 
-                    m = res 
-                    |@ sprintf "Inc: model = %i, actual = %i" m res
-                override __.ToString() = "inc"}
-        let create initialValue = 
-            { new Setup<Counter,int>() with
-                member __.Actual() = new Counter(initialValue)
-                member __.Model() = initialValue }
-        { new Machine<Counter,int>() with
-            member __.Setup = Gen.choose (0,3) |> Gen.map create |> Arb.fromGen
-            member __.Next _ = Gen.elements [ inc; dec ] }
-    *)
     
     let config =  {Config.Quick with MaxTest = 1}
     type stateTest =
-       // static member ``test1`` = fun (e:List<RecordType>) -> List.isEmpty e  = List.isEmpty e
         static member ``test2`` = Command.toProperty startTestSuite 
-    //let basicApiTests = Check.All 
+
     let setupTestSuite = Check.All<stateTest>(config)
     
     
