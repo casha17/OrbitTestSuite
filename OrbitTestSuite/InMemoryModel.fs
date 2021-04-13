@@ -2,6 +2,7 @@ namespace OrbitTestSuite.InMemoryModel
 
 open OrbitTestSuite.Models
 open OrbitTestSuite.API
+open OrbitTestSuite.Models.APIModels
 module inMemoryModels = 
 
 
@@ -29,7 +30,11 @@ module inMemoryModels =
             name = ""
             initials = ""
         }
-        let mutable (getFilesResponse:Response<'a>)
+        
+        let mutable (getFilesResponse:BaseResponse<listFilesResponse>)
+        
+        
+        
         member __.GetFiles = files
         member __.GetDirectories = directories
         member __.GetUser = user
@@ -39,4 +44,4 @@ module inMemoryModels =
         member __.setUser newUser = user <- newUser
         member __.setDirectoryVersions newVersions = directoryVersions <- newVersions
         member __.ToString = printf "Files: \n\n %A  Directories: \n\n %A User: \n\n %A" files directories user
-        member __.GetFilesAPI userId = API.listFiles userId
+        member __.GetFilesAPI userId = getFilesResponse <- API.listFiles userId

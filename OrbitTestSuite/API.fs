@@ -7,27 +7,14 @@ open FSharp.Json
 open OrbitTestSuite.Models
 module API =
 
-
-    (* 
-    type Response<'a> = {
+    type BaseResponse<'a> = {
         data: 'a
-        statusCode: int
-    }
-    *)
-
-    type ResponseWithStatusCode = {
         response: Response
-        statusCode:int
-    } 
-    (* 
-    let isSuccess (response:Response<'a>) = 
-        response.statusCode >= 200 &&  response.statusCode <= 300
-    *)
-    let createObject (response:Response) = {
-        response = Response
-        statusCode = R
     }
-
+    
+    let isSuccess (response:BaseResponse<'a>) = 
+        response.response.statusCode >= 200 &&  response.response.statusCode <= 300
+    
     let downloadFile userId fileId = 
         Request.createUrl Get (Utilities.concatString ["http://localhost:8085/file?userId="; userId;  "&id=";  fileId]) 
         |> Request.responseAsString
@@ -35,17 +22,20 @@ module API =
         |> APIModels.fileMapper
 
     let listFiles userId = 
-        Request.createUrl Get (Utilities.concatString ["http://localhost:8085/file/list?userId="; userId;])
-        |> HttpFs.Client.getResponse
-        |> createObject
-        |> run
-        |> Response.readBodyAsString
-        |> run
-        |> Json.deserialize<>
-
-
-
-
+        let result =
+            Request.createUrl Get (Utilities.concatString ["http://localhost:8085/file/list?userId="; userId;])
+            |> getResponse
+            |> run
+            
+        let data =
+            Response.readBodyAsString result
+            |> run
+            |> Json.deserialize<APIModels.listFilesResponse>
+        
+        {
+            data = data
+            response = result
+        }
 
     let fileMetaInformationByFileId userId fileId = 
         Request.createUrl Get (Utilities.concatString ["http://localhost:8085/file/meta?userId="; userId;  "&id=";  fileId]) 
