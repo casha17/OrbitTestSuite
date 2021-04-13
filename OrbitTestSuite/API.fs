@@ -4,7 +4,6 @@ open Hopac
 open HttpFs.Client
 
 open FSharp.Json
-open OrbitTestSuite.API
 open OrbitTestSuite.Models
 module API =
 
