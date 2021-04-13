@@ -12,7 +12,7 @@ module testSuite =
     let config =  {Config.Quick with MaxTest = 1}
     type stateTest =
         //static member ``test1`` = fun (e:List<RecordType>) -> List.isEmpty e  = List.isEmpty getContent
-        static member ``test2`` = StateMachine.toProperty directoryget.testSuite
+        static member ``test2`` = Command.toProperty directoryget.testSuite
     //let basicApiTests = Check.All 
     let setupTestSuite = Check.VerboseAll<stateTest>()
     
