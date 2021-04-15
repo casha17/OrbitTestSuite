@@ -59,7 +59,9 @@ module API =
             Response.readBodyAsString result
             |> run
             |> Json.deserialize<APIModels.metadata>
-           
+        
+        //printf "%A" data
+        
         {
             data = data
             response = result

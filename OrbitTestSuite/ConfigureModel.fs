@@ -30,7 +30,7 @@ module ConfigureModel =
         model.setUser TempUser
         let listFilesResult = API.listFiles (string model.GetUser.id)
         model.appendFiles (getFileContent listFilesResult.data.fileList (string model.GetUser.id))
-        model.appendDirectories (API.directoryStructure (string model.GetUser.id))
+        model.appendDirectories (API.directoryStructure (string model.GetUser.id)).data
         model.setDirectoryVersions (listFilesResult.data.directoryVersions)
         model
         
