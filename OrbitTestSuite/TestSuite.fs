@@ -34,7 +34,7 @@ module testSuite =
                     override __.RunModel inMemoryModel = inMemoryModel // There is no purpose of running an equivalent get locally
                     override __.Post(apiModel, inMemoryModel) = Utilities.compareFileMetadata
                                                                     apiModel.GetFilesMetadataByFiledIdResponse.data
-                                                                    (inMemoryModel.GetInMemoryFilesMetadataByFiledId (apiModel.GetRandomFileId seed)).[0].metadata = true
+                                                                    (inMemoryModel.GetInMemoryFilesMetadataByFiledId (apiModel.GetRandomFileId seed)) = true
                                                                 |@ sprintf "model: %A <> %A" apiModel.GetFilesResponse.data.fileList inMemoryModel.GetFiles
                     override __.ToString() = "GetFileMetaData"
                     }
@@ -42,11 +42,11 @@ module testSuite =
         { new ICommandGenerator<inMemoryModels.inMemoryModel,inMemoryModels.inMemoryModel> with
             member __.InitialActual = inMemoryModel
             member __.InitialModel = inMemoryModel
-            member __.Next model = Gen.elements [ getFiles; ]}//generateSeeds |> getFileMetaDataByFileId; ] }
+            member __.Next model = Gen.elements [ getFiles; generateSeeds |> getFileMetaDataByFileId; ]}//generateSeeds |> getFileMetaDataByFileId; ] }
 
     // The getFileMetaDataByFileId
     
-    let config =  {Config.Quick with MaxTest = 1}
+    let config =  {Config.Quick with MaxTest = 10}
     type stateTest =
         static member ``test2`` = Command.toProperty startTestSuite 
 
