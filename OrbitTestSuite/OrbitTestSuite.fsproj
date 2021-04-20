@@ -6,11 +6,9 @@
   <ItemGroup>
     <Compile Include="Models.fs" />
     <Compile Include="API.fs" />
-    <Compile Include="InMemoryModel.fs" />
+    <Compile Include="ApiModel.fs" />
     <Compile Include="Utilities.fs" />
-    <Compile Include="ConfigureModel.fs" />
     <Compile Include="TestSuite.fs" />
-    <Compile Include="test.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
