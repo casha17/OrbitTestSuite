@@ -58,35 +58,42 @@ module testSuite =
     
   
     let spec =        
-        let post content  = 
+        let post content userId  = 
             { new Operation<apiModel,inMemory>() with
                 member __.Run apiModel =
-                    let s = apiModel.users |> List.map (fun user ->
-                        if user.userId = "100" then { user with files = user.files |> List.map (fun e -> {e with content = content; fileVersion = e.fileVersion+1 })} else user )
-                    {apiModel with users = s}
+                    let s = apiModel.users |> List.find (fun user -> user.userId = userId)
+                    let a = apiModel.users |> List.where (fun user -> user.userId <> userId)
+                    let fileId = if userId = "100" then "2" else "3"
+                    let qw = s.files |> List.find (fun file -> file.fileId = fileId)
+                    let b = {qw with content = content; fileVersion = qw.fileVersion+1}
+                    let x = {s with files = b::[] }
+                    let v = a@x::[]
+                    {apiModel with users = v}
                 member op.Check (inMemoryModel,apiModel) =
-                    let user = apiModel.users |> List.find (fun e-> e.userId = "100")
-                    let file = user.files |> List.find (fun e -> e.fileId = "2")
+                    let user = apiModel.users |> List.find (fun e-> e.userId = userId)
+                    let file = user.files |> List.head
                     let currentFileversion = file.fileVersion-1
-                    let s = inMemoryModel.PostFile content "100" "2"  (string currentFileversion) (string currentFileversion) "637479675580000000" 
+                    let currentFileid = file.fileId
+                    let s = inMemoryModel.PostFile content userId currentFileid  (string currentFileversion) (string currentFileversion) "637479675580000000" 
                     true.ToProperty()
                          |@ sprintf "post content %s " content 
                 override __.ToString() =
-                    sprintf "Post %s  " content 
+                    sprintf "Post content: %s toUser:%s" content userId
                     }
             
-        let get = 
+        let get userId = 
             { new Operation<apiModel,inMemory>() with
                 member __.Run apiModel = apiModel
                 member op.Check (inMemoryModel,apiModel) =
-                    let Apires = (API.downloadFile "100" "2")
+                    let currentFileId = if userId = "100" then "2" else "3"
+                    let Apires = (API.downloadFile userId currentFileId)
                     //if res.data <> null then printf "%s" "NOT NULL" else printf "%s" "NULL"
-                    let localRes = apiModel.users |> List.find (fun e -> e.userId = "100")
-                    let s = localRes.files |> List.find (fun e-> e.fileId =  "2")
+                    let localRes = apiModel.users |> List.find (fun e -> e.userId = userId)
+                    let s = localRes.files |> List.find (fun e-> e.fileId =  currentFileId)
                     (Apires.data = s.content).ToProperty
                     //true.ToProperty
                         |@ sprintf "get API: %s Local:  " Apires.data   
-                override __.ToString() = "GET"}
+                override __.ToString() = sprintf "GET user:%s" userId}
        
         let create = 
             { new Setup<apiModel,inMemory>() with
@@ -113,14 +120,14 @@ module testSuite =
                     {users = s@v}
                     }
          
-         
+        let name = Gen.elements ["a"; "b"; "c"; "d"]
+        let s = Gen.elements ["100"; "101"]
         { new Machine<apiModel,inMemory>() with
             member __.Setup = create |> Gen.constant |> Arb.fromGen
             member __.Next _ =
-                   let ss = Gen.elements ["foo"; "bar"; "baz"] |> Gen.nonEmptyListOf |> Gen.sample 20 4 |> List.head |> List.head
-                   let name = Gen.elements ["a"; "b"; "c"; "d"]
-                   Gen.elements [ ss  |>  post ;  get]
-                   }
+                let killOrReg = [  Gen.map2 post name s ]
+                let s = [Gen.map get s]
+                Gen.oneof (killOrReg @ s) }
 
 
     let config =  {Config.Verbose with MaxTest = 7;   }
