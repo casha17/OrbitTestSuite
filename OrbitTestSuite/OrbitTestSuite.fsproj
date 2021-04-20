@@ -10,11 +10,14 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="ConfigureModel.fs" />
     <Compile Include="TestSuite.fs" />
+    <Compile Include="test.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Fable.SimpleHttp" Version="3.0.0" />
     <PackageReference Include="FsCheck" Version="2.15.1" />
     <PackageReference Include="FSharp.Json" Version="0.4.0" />
+    <PackageReference Include="FSharp.Net.Http" Version="1.0.2" />
     <PackageReference Include="Hopac" Version="0.5.0" />
     <PackageReference Include="Http.fs" Version="5.4.0" />
   </ItemGroup>

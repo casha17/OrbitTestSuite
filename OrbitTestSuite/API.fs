@@ -157,9 +157,10 @@ module API =
             response = result
         }
     
-    let fileupload content userId fileId version timestamp =
+    let fileupload content userId id fileId version timestamp =
         let result =
-            Request.createUrl Post (concatString  ["http://localhost:8085/file/upload?userId="; userId; "&id="; fileId; "&version="; version;"&timestamp="; timestamp;])
+            Request.createUrl Post (concatString  ["http://localhost:8085/file/upload?userId="; userId; "&id="; id; "&fileId="; fileId; "&version="; version;"&timestamp="; timestamp;])
+            |> Request.bodyString content
             |> getResponse    
             |> run
         
@@ -258,3 +259,5 @@ module API =
             data = data
             response = result
         }
+
+

@@ -15,7 +15,13 @@ module Utilities =
     let compareFileMetadata (x: metadata) (yList: List<inMemoryFile>) =
         if (yList.Length = 0) then false
         else
-            printf "Hejsa %A" yList.[0]
+            //printf "Hejsa %A" yList.[0]
             let y = yList.[0].metadata
             let trip = (x.id = y.id) && (x.name = y.name) && (x.parentId = y.parentId) && (x.timestamp = y.timestamp) && (x.version = y.version) && (x.versionChanged = y.versionChanged)
             trip
+
+    let rec compareContent list fileId content = match list with 
+        | [] -> false
+        | el::els -> if ((el.metadata.id <> fileId) && el.content <> content) then false else (compareContent els fileId content)
+
+    
