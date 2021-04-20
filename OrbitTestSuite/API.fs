@@ -42,7 +42,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.listFilesResponse>
+            |> Json.deserialize<ApiResponseModels.listFilesResponse>
         
         {
             data = data
@@ -58,7 +58,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.metadata>
+            |> Json.deserialize<ApiResponseModels.metadata>
         
         //printf "%A" data
         
@@ -77,7 +77,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.metadata>
+            |> Json.deserialize<ApiResponseModels.metadata>
 
         {
             data = data
@@ -93,7 +93,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<List<APIModels.directoryStructure>>
+            |> Json.deserialize<List<ApiResponseModels.directoryStructure>>
         {
             data = data
             response = result
@@ -119,7 +119,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.createFile>
+            |> Json.deserialize<ApiResponseModels.createFile>
         {
             response = result
             data = data
@@ -134,7 +134,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.moveFile>
+            |> Json.deserialize<ApiResponseModels.moveFile>
         
         {
             response = result
@@ -150,7 +150,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.updateFileTimeStamp>
+            |> Json.deserialize<ApiResponseModels.updateFileTimeStamp>
         
         {
             data = data
@@ -167,7 +167,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.fileUpload>
+            |> Json.deserialize<ApiResponseModels.fileUpload>
         
         {
             data = data
@@ -189,7 +189,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.fileLock>
+            |> Json.deserialize<ApiResponseModels.fileLock>
         
         {
             data = data
@@ -205,7 +205,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.directoryCreate>
+            |> Json.deserialize<ApiResponseModels.directoryCreate>
         
         {
             data = data
@@ -221,7 +221,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.directoryMove>
+            |> Json.deserialize<ApiResponseModels.directoryMove>
         
         {
             data = data
@@ -237,7 +237,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.fileDelete>
+            |> Json.deserialize<ApiResponseModels.fileDelete>
 
         {
             data = data
@@ -253,7 +253,7 @@ module API =
         let data =
             Response.readBodyAsString result
             |> run
-            |> Json.deserialize<APIModels.directoryDelete>
+            |> Json.deserialize<ApiResponseModels.directoryDelete>
         
         {
             data = data

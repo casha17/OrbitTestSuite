@@ -1,6 +1,8 @@
 namespace OrbitTestSuite.Models
 
-module APIModels =
+module ApiResponseModels =
+    
+    type C = C of int 
     
     type metadata = {
         id: int
@@ -88,3 +90,19 @@ module APIModels =
 
 
 
+module Model =
+    type File =
+            {
+                content: string
+                fileId:string
+                fileVersion: int
+            }
+        type User =
+            {
+                files: File list
+                userId: string
+            }
+        type Model =
+            {
+                users: User list 
+            }
