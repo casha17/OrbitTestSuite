@@ -5,6 +5,7 @@ open HttpFs.Client
 
 open FSharp.Json
 open OrbitTestSuite.Models
+open OrbitTestSuite.Models.Model
 module API =
 
     let concatString x = 
@@ -12,7 +13,8 @@ module API =
     
     type BaseResponse<'a> = {
         data: 'a
-        response: Response
+        response: HttpFs.Client.Response
+        fail: bool
     }
     
     let isSuccess (response:BaseResponse<'a>) = 
@@ -23,49 +25,58 @@ module API =
             Request.createUrl Get (concatString ["http://localhost:8085/file?userId="; userId;  "&id=";  fileId]) 
             |> getResponse
             |> run 
+        if (result.statusCode = 200) then
+            
+            let data = 
+                Response.readBodyAsString result
+                |> run
         
-        let data = 
-            Response.readBodyAsString result
-            |> run
-        
+            Some({
+                data = data
+                response = result
+                fail = false
+            })
+        else
+            None
+    
+    let createSuccess x =
         {
-            data = data
-            response = result
+            Fail = None
+            Success = Some(x)
         }
-        
+     
+    let createFailNoUserIdSupplied x y =
+        {
+            Fail = Some(NoUserIdSupplied(x))
+            Success = None
+        }
+    let createFailNoFileFound x y =
+        {
+            Fail = Some(FileNotFound(x))
+            Success = None
+        }
     let listFiles userId = 
         let result =
             Request.createUrl Get (concatString ["http://localhost:8085/file/list?userId="; userId;])
             |> getResponse
             |> run
-            
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.listFilesResponse>
         
-        {
-            data = data
-            response = result
-        }
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.listFilesResponse> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailNoUserIdSupplied 400
+           
+                   
 
     let fileMetaInformationByFileId userId fileId = 
         let result =
             Request.createUrl Get (concatString ["http://localhost:8085/file/meta?userId="; userId;  "&id=";  fileId])
             |> getResponse
             |> run
-        
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.metadata>
-        
-        //printf "%A" data
-        
-        {
-            data = data
-            response = result
-        }
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.metadata> |> createSuccess
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailNoFileFound 404
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNoFileFound 404
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailNoFileFound 404
 
     let fileMetaInformationByFileName userId parentId fileName = 
         
@@ -74,15 +85,19 @@ module API =
             |> getResponse
             |> run
         
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.metadata>
-
-        {
-            data = data
-            response = result
-        }
+        if (result.statusCode = 200) then
+            
+            let data = 
+                Response.readBodyAsString result
+                |> run
+        
+            Some({
+                data = data
+                response = result
+                fail = false
+            })
+        else
+            None
 
     let directoryStructure userId = 
         let result =
@@ -95,8 +110,9 @@ module API =
             |> run
             |> Json.deserialize<List<ApiResponseModels.directoryStructure>>
         {
-            data = data
+            data = Some data
             response = result
+            fail = false
         }
 
     let versionCheck userId clientVersion = 
@@ -106,8 +122,9 @@ module API =
             |> getResponse
             |> run
         {
+            data = None
             response = result
-            data = ()
+            fail = false
         }
     
     let createFile userId parentId fileName fileTimestamp = 
@@ -121,8 +138,9 @@ module API =
             |> run
             |> Json.deserialize<ApiResponseModels.createFile>
         {
+            data = Some data
             response = result
-            data = data
+            fail = false
         }   
 
     let fileMove userId fileId fileVersion parentId newFilename = 
@@ -137,8 +155,9 @@ module API =
             |> Json.deserialize<ApiResponseModels.moveFile>
         
         {
+            data = Some data
             response = result
-            data = data
+            fail = false
         }
 
     let updateFileTimestamp userId fileId fileVersion fileTimestamp = 
@@ -153,8 +172,9 @@ module API =
             |> Json.deserialize<ApiResponseModels.updateFileTimeStamp>
         
         {
-            data = data
+            data = Some data
             response = result
+            fail = false
         }
     
     let fileupload content userId id fileId version timestamp =
@@ -163,15 +183,22 @@ module API =
             |> Request.bodyString content
             |> getResponse    
             |> run
-        
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.fileUpload>
-        
-        {
-            data = data
+        if result.statusCode = 200 then
+            let data =
+                Response.readBodyAsString result
+                |> run
+                |> Json.deserialize<ApiResponseModels.fileUpload>
+            {
+            data = Some data
             response = result
+            fail = false
+            }
+            
+        else
+            {
+            data = None
+            response = result
+            fail = true
         }
     
     type lockState  = Lock | Release
@@ -192,8 +219,9 @@ module API =
             |> Json.deserialize<ApiResponseModels.fileLock>
         
         {
-            data = data
+            data = Some data
             response = result
+            fail = false
         }
 
     let directoryCreate userId directoryId directoryName directoryVersion = 
@@ -208,8 +236,9 @@ module API =
             |> Json.deserialize<ApiResponseModels.directoryCreate>
         
         {
-            data = data
+            data = Some data
             response = result
+            fail = false
         }
 
     let directoryMove userId directoryId directoryVersion directoryName parentDirectoryId parentDirectoryVersion = 
@@ -224,8 +253,9 @@ module API =
             |> Json.deserialize<ApiResponseModels.directoryMove>
         
         {
-            data = data
+            data = Some data
             response = result
+            fail = false
         }
 
     let fileDelete userId fileId fileVersion = 
@@ -240,8 +270,9 @@ module API =
             |> Json.deserialize<ApiResponseModels.fileDelete>
 
         {
-            data = data
+            data = Some data
             response = result
+            fail = false
         }
     
     let directoryDelete userId directoryId directoryVersion = 
@@ -256,8 +287,9 @@ module API =
             |> Json.deserialize<ApiResponseModels.directoryDelete>
         
         {
-            data = data
+            data = Some data
             response = result
+            fail = false
         }
 
 
