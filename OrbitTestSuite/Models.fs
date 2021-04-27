@@ -6,6 +6,7 @@ module ApiResponseModels =
     
     type C = C of int 
     
+
     type metadata = {
         id: int
         version: int
@@ -41,7 +42,7 @@ module ApiResponseModels =
     }
 
     type createFile = {
-        id: int
+        id: string
         version: int
         name: string
         timestamp: string
@@ -93,12 +94,15 @@ module ApiResponseModels =
 
 
 module Model =
+    
+    [<StructuredFormatDisplay("meta:{metadata}")>]
     type File =
             {
                 content: string
                 metadata: ApiResponseModels.metadata
             }
     
+        [<StructuredFormatDisplay("id:{id}, version:{version}")>]
         type Modelmetadata = {
             id: string
             name: string
@@ -122,6 +126,7 @@ module Model =
             }
             
 
+        [<StructuredFormatDisplay("Model: {files}")>]
         type Model =
             {
                 users: User list

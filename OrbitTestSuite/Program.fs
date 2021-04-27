@@ -15,6 +15,8 @@ open OrbitTestSuite.InMemoryModel
 let main argv =
     // Start testsuite
     testSuite.start
+    //let s = API.createFile "100" "15" "test1.txt" "637479675580000000"
+    //let v = API.createFile "100" "15" "test1.txt" "637479675580000000"
     //let testData = Utilities.getTestData
     //let s = Utilities.getCurrentFileId testData.files
    // printf "%i" s
