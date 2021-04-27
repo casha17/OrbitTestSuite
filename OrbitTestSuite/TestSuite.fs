@@ -204,7 +204,7 @@ module testSuite =
                 let fileMetaInformationGen = [Gen.map2 fileMetaInformation user fileIdGen ]
                 let dirStrcutureGen = [Gen.map dirStructure user]
                 let createFileGen = [Gen.map3 createFile user dirIdGen fileNameGen ]
-                Gen.oneof (uploadFileGen @ downloadFileGen @ listFilesGen @ fileMetaInformationGen @dirStrcutureGen (*@ createFileGen*)f ) }
+                Gen.oneof (uploadFileGen @ downloadFileGen @ listFilesGen @ fileMetaInformationGen @dirStrcutureGen (*@ createFileGen*) ) }
 
 
     let config =  {Config.Verbose with MaxTest = 3;   }
