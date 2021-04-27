@@ -15,7 +15,9 @@ open OrbitTestSuite.InMemoryModel
 let main argv =
     // Start testsuite
     testSuite.start
-    let testData = Utilities.getTestData
+    //let testData = Utilities.getTestData
+    //let s = Utilities.getCurrentFileId testData.files
+   // printf "%i" s
     //printf "%A" testData.users
     //let s = Utilities.downloadFileModel testData "101" "2" 
     //let v = API.downloadFile "101" "2"
@@ -25,7 +27,7 @@ let main argv =
     //let s = Utilities.uploadFileModel testData "xx" "100" "2"
     //match s.content with
     //    |  Some s -> printf "%A" s.users
-    
+    (*
     let modelResponse = Utilities.listFilesModel testData "101"
     let sutResponse = Utilities.listFilesSut "101"
     match sutResponse.Fail , sutResponse.Success , modelResponse.Fail , modelResponse.Success with
@@ -34,5 +36,6 @@ let main argv =
             match sut , model with
                 | NoUserIdSupplied x , NoUserIdSupplied y  -> printf "NoUserIdSupplied"
         | _ , _ , _ , _ -> printf "EXCEPTION"
-            
+    *)
+    //let res = API.createFile "100" "15" "test1.dd" "637479675580000000"
     0 // return an integer exit code

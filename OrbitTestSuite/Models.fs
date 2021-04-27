@@ -1,5 +1,7 @@
 namespace OrbitTestSuite.Models
 
+
+
 module ApiResponseModels =
     
     type C = C of int 
@@ -94,8 +96,7 @@ module Model =
     type File =
             {
                 content: string
-                fileId:string
-                fileVersion: int
+                metadata: ApiResponseModels.metadata
             }
     
         type Modelmetadata = {
@@ -106,16 +107,26 @@ module Model =
             versionChanged: int
             timeStamp: string
         }
+        
+        type permission =
+            | CRUD
+            | R
+            
         type User =
             {
-                files: File list
+                userFiles: Map<string,permission>
                 userId: string
                 directoryVersions: ApiResponseModels.directoryVersion list
-                fileList: ApiResponseModels.metadata list
+                listFiles: ApiResponseModels.metadata list
+                dirStructures: ApiResponseModels.directoryStructure list
             }
+            
+
         type Model =
             {
-                users: User list 
+                users: User list
+                files: File list
+                currentFileId: int
             }
         type TestResponse = {
             fail: bool
@@ -125,6 +136,12 @@ module Model =
         type ErrorCodes =
             NoUserIdSupplied of int
             | FileNotFound of int
+            | MissingUserId of int
+            | FileAlreadyExist of int
+            | ParentDirectoryNotFound of int
+            | InvalidFileName of int
+            | FilePathTooLong of int
+            | Unauthorized of int
             
             
         type listFileResponse<'a> = {
