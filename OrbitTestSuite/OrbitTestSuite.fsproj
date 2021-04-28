@@ -9,6 +9,7 @@
     <Compile Include="ApiModel.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="TestSuite.fs" />
+    <Compile Include="Test.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

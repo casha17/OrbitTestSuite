@@ -6,7 +6,7 @@ open OrbitTestSuite.Models.Model
 open OrbitTestSuite.TestSuite
 open OrbitTestSuite.Utilities
 open OrbitTestSuite.InMemoryModel
-
+open OrbitTestSuite.Test.test
 // Define a function to construct a message to print
 
 
@@ -15,7 +15,11 @@ open OrbitTestSuite.InMemoryModel
 let main argv =
     // Start testsuite
     testSuite.start
-    //let testData = Utilities.getTestData
+    //let s = API.createFile "100" "15" "test1.txt" "637479675580000000"
+    //let v = API.createFile "100" "15" "test1.txt" "637479675580000000"
+   // let testData = Utilities.getTestData
+   // let s = Utilities.getAllDirId "100"
+    //let s = Utilities.fileDeleteModel testData "100" 2 
     //let s = Utilities.getCurrentFileId testData.files
    // printf "%i" s
     //printf "%A" testData.users
@@ -38,4 +42,15 @@ let main argv =
         | _ , _ , _ , _ -> printf "EXCEPTION"
     *)
     //let res = API.createFile "100" "15" "test1.dd" "637479675580000000"
+    
+    let t2 = Branch ("a", [Branch ("b", [Leaf "c"; Leaf "d"]); Branch ("e", [Leaf "f"; Leaf "g"])])
+
+    let rec checkstuff tree =
+        match tree with
+        | Leaf _ -> true
+        | Branch (node, children) ->
+        List.fold ( || ) false (List.map checkstuff children)
+        
+    let s = checkstuff t2 
+    
     0 // return an integer exit code

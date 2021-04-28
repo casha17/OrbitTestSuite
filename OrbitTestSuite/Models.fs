@@ -6,6 +6,7 @@ module ApiResponseModels =
     
     type C = C of int 
     
+
     type metadata = {
         id: int
         version: int
@@ -41,7 +42,7 @@ module ApiResponseModels =
     }
 
     type createFile = {
-        id: int
+        id: string
         version: int
         name: string
         timestamp: string
@@ -70,10 +71,10 @@ module ApiResponseModels =
 
     type directoryCreate = {
         name: string
-        id: int
+        id: string
         version: int
         parentId: int
-        newVersion: directoryVersion list
+        newVersions: directoryVersion list
     }
 
     type directoryMove = {
@@ -88,17 +89,45 @@ module ApiResponseModels =
     type directoryDelete = {
         success: bool
     }
+    
+    type permissionResponse = {
+        create: bool
+        read: bool
+        update: bool
+        delete: bool
+    }
+    
+    type parentResponse = {
+        id: int
+    }
+    type SERVCIEDirMetaResponse = {
+        id: int
+        name: string
+        path: string
+        version: int
+        __permissions: permissionResponse option
+        parent: parentResponse
+        is_checked_out: bool
+        is_default: bool
+    }
 
 
+    type SERVICEDirMetaResponseWithUser = {
+        metadata: SERVCIEDirMetaResponse
+        user: string
+    }
 
 
 module Model =
+    
+    [<StructuredFormatDisplay("meta:{metadata}")>]
     type File =
             {
                 content: string
                 metadata: ApiResponseModels.metadata
             }
     
+        [<StructuredFormatDisplay("id:{id}, version:{version}")>]
         type Modelmetadata = {
             id: string
             name: string
@@ -119,14 +148,20 @@ module Model =
                 directoryVersions: ApiResponseModels.directoryVersion list
                 listFiles: ApiResponseModels.metadata list
                 dirStructures: ApiResponseModels.directoryStructure list
+                
             }
             
 
+        [<StructuredFormatDisplay("Model: {files}")>]
         type Model =
             {
                 users: User list
                 files: File list
                 currentFileId: int
+                deletedFileVersion: int
+                currentUpdatedFile:int
+                currentDirId:int
+                currentUpdatedDirId: int
             }
         type TestResponse = {
             fail: bool

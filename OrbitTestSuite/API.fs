@@ -81,7 +81,7 @@ module API =
         match result.statusCode with
             | s when s = 200 -> Response.readBodyAsString result |> run |> createSuccess
             | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
-    
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailNoFileFound 404
 
     
     let listFiles userId = 
@@ -113,20 +113,14 @@ module API =
             Request.createUrl Get (concatString ["http://localhost:8085/file/meta?userId="; userId;  "&parent_id=";  parentId; "&name="; fileName]) 
             |> getResponse
             |> run
-        
-        if (result.statusCode = 200) then
-            
-            let data = 
-                Response.readBodyAsString result
-                |> run
-        
-            Some({
-                data = data
-                response = result
-                fail = false
-            })
-        else
-            None
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.metadata> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
+            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
+            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+            | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
 
     let directoryStructure userId = 
         let result =
@@ -155,12 +149,11 @@ module API =
     let createFile userId parentId fileName fileTimestamp = 
         let result =
             Request.createUrl Post (concatString ["http://localhost:8085/file?userId="; userId;  "&parentId=";  parentId; "&name="; fileName; "&timestamp="; fileTimestamp]) 
-            |> Request.bodyString ""
             |> getResponse
             |> run
         
         match result.statusCode with
-            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.metadata> |> createSuccess
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.createFile> |> createSuccess
             | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
             | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
             | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
@@ -171,37 +164,33 @@ module API =
 
     let fileMove userId fileId fileVersion parentId newFilename = 
         let result =
-            Request.createUrl Get (concatString ["http://localhost:8085/file/move?userId="; userId;  "&id=";  fileId; "&version="; fileVersion; "&parentId="; parentId; "&name="; newFilename]) 
+            Request.createUrl Post (concatString ["http://localhost:8085/file/move?userId="; userId;  "&id=";  fileId; "&version="; fileVersion; "&parentId="; parentId; "&name="; newFilename]) 
             |> getResponse
             |> run
         
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.moveFile>
-        
-        {
-            data = Some data
-            response = result
-            fail = false
-        }
-
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.moveFile> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
+            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
+            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+            | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+            
     let updateFileTimestamp userId fileId fileVersion fileTimestamp = 
         let result =
-            Request.createUrl Get (concatString ["http://localhost:8085/file/timestamp?userId="; userId;  "&id=";  fileId; "&version="; fileVersion; "&timestamp="; fileTimestamp]) 
+            Request.createUrl Post (concatString ["http://localhost:8085/file/timestamp?userId="; userId;  "&id=";  fileId; "&version="; fileVersion; "&timestamp="; fileTimestamp]) 
             |> getResponse
             |> run
         
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.updateFileTimeStamp>
-        
-        {
-            data = Some data
-            response = result
-            fail = false
-        }
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.updateFileTimeStamp> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
+            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
+            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+            | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
     
     let fileUpload content userId fileId version timestamp =
         let result =
@@ -231,33 +220,28 @@ module API =
             |> getResponse
             |> run
         
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.fileLock>
-        
-        {
-            data = Some data
-            response = result
-            fail = false
-        }
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.directoryCreate> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
+            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
+            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
 
     let directoryCreate userId directoryId directoryName directoryVersion = 
         let result =
-            Request.createUrl Get (concatString ["http://localhost:8085/dir?userId="; userId;  "&parentId=";  directoryId; "&name="; directoryName; "&version="; directoryVersion]) 
+            Request.createUrl Post (concatString ["http://localhost:8085/dir?userId="; userId;  "&parentId=";  directoryId; "&name="; directoryName; "&version="; directoryVersion]) 
             |> getResponse
             |> run
         
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.directoryCreate>
-        
-        {
-            data = Some data
-            response = result
-            fail = false
-        }
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.directoryCreate> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
+            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
+            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+
 
     let directoryMove userId directoryId directoryVersion directoryName parentDirectoryId parentDirectoryVersion = 
         let result =
@@ -265,33 +249,29 @@ module API =
             |> getResponse
             |> run
         
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.directoryMove>
-        
-        {
-            data = Some data
-            response = result
-            fail = false
-        }
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.directoryMove> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
+            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
+            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+
 
     let fileDelete userId fileId fileVersion = 
         let result =
-            Request.createUrl Get (concatString ["http://localhost:8085/file?userId="; userId;  "&id=";  fileId; "&version="; fileVersion]) 
+            Request.createUrl Delete (concatString ["http://localhost:8085/file?userId="; userId;  "&id=";  fileId; "&version="; fileVersion]) 
             |> getResponse
             |> run
         
-        let data =
-            Response.readBodyAsString result
-            |> run
-            |> Json.deserialize<ApiResponseModels.fileDelete>
-
-        {
-            data = Some data
-            response = result
-            fail = false
-        }
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.fileDelete> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
+            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
+            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+            | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
     
     let directoryDelete userId directoryId directoryVersion = 
         let result =
@@ -310,4 +290,19 @@ module API =
             fail = false
         }
 
+    let SERVICEDirMetaData userId dirId = 
+        let result =
+            Request.createUrl Get (concatString ["http://localhost:8085/api/directories?userId="; userId;  "&id=";  dirId;]) 
+            |> getResponse
+            |> run
+        
+        match result.statusCode with
+            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.SERVCIEDirMetaResponse> |> createSuccess
+            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
+            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
+            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
+            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+            | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+    
 
