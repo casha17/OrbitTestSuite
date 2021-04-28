@@ -15,6 +15,8 @@ open OrbitTestSuite.InMemoryModel
 module testSuite =
     let spec =
         let mutable currentFileId = 5
+        let mutable currentDirId = 22
+        let mutable currentUpdatedDir  = 0
         let uploadFile content userId (fileId:int) = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
@@ -45,6 +47,7 @@ module testSuite =
                         | Some sutc , None , Some model , None -> 
                             match sutc , model with
                                 | Unauthorized x , Unauthorized y  -> true.ToProperty
+                                | FileNotFound x , FileNotFound y -> true.ToProperty
                                 | _  , _  -> false.ToProperty
                     |@ sprintf "DownloadFile: %i " fileId
                   
@@ -67,7 +70,7 @@ module testSuite =
                                 | NoUserIdSupplied x , NoUserIdSupplied y  -> true.ToProperty
                                 | _  , _  -> false.ToProperty
                         | _ , _ , _ , _ -> printf "should never reach this state"; false.ToProperty
-                    |@ sprintf "list files: %A - %A " sutResponse.Success modelResponse.Success
+                    |@ sprintf "list files SUT: %A - MODEL: %A " sutResponse.Success modelResponse.Success
                 override __.ToString() = sprintf "listfiles for user=%s" userId
             }
              
@@ -139,8 +142,73 @@ module testSuite =
                     match sutResponse.Fail , sutResponse.Success  with
                         | _ , _t  ->  true.ToProperty
                     |@ sprintf "moveFile: "
-                override __.ToString() = sprintf "Move file for user=%s dirId=%i filename=%s" userId dirId  newFileName
+                override __.ToString() = sprintf "Move file for user=%s dirId=%i fileId=%i filename=%s" userId dirId fileId  newFileName
+            }    
+                
+         
+        let updateFileTimeStamp (userId:string) fileId   = 
+            { new Operation<apiModel,Model>() with
+                member __.Run model =
+                    let modelResponse = Utilities.updateFileTimestampModel model userId fileId "637479675580000000" 
+                    match modelResponse.Fail , modelResponse.Success with
+                        | None , Some newModel  -> newModel
+                        | Some error , Some newModel  -> model
+                        | _ , _ -> model
+                member op.Check (sut,model) =
+                    let sutResponse = Utilities.updateFileTimestampSut model userId fileId "637479675580000000"  
+                    match sutResponse.Fail , sutResponse.Success  with
+                        | _ , _t  ->  true.ToProperty
+                    |@ sprintf "UpdateTimestamp: "
+                override __.ToString() = sprintf "update timestamp file for user=%s fileId=%i  " userId  fileId  
             }
+            
+        let fileDelete (userId:string) fileId   = 
+            { new Operation<apiModel,Model>() with
+                member __.Run model =
+                    let modelResponse = Utilities.fileDeleteModel model userId fileId 
+                    match modelResponse.Fail , modelResponse.Success with
+                        | None , Some newModel  -> newModel
+                        | Some error , Some newModel  -> model
+                        | _ , _ -> model
+                member op.Check (sut,model) =
+                    let sutResponse = Utilities.deleteFileSut model userId fileId   
+                    match sutResponse.Fail , sutResponse.Success  with
+                        | _ , _t  ->  true.ToProperty
+                    |@ sprintf "Delete File: fileID "
+                override __.ToString() = sprintf "Delete file for user=%s fileId=%i  " userId  fileId  
+            }
+            
+        let createDirectory (userId:string) dirId fileName  = 
+            { new Operation<apiModel,Model>() with
+                member __.Run model =
+                    let modelResponse = Utilities.createDirectoryModel model userId dirId fileName
+                    match modelResponse.Fail , modelResponse.Success with
+                        | None , Some newModel  ->  currentFileId <- newModel.currentFileId; newModel
+                        | Some error , Some newModel  -> currentFileId <- newModel.currentFileId; newModel
+                        | _ , _ -> model
+                member op.Check (sut,model) =
+                    let sutResponse = API.directoryCreate userId (string dirId) fileName "1"
+                    match sutResponse.Fail , sutResponse.Success  with
+                        | _ , _t  ->  true.ToProperty
+                    |@ sprintf "FileMetaInformation: "
+                override __.ToString() = sprintf "Create file for user=%s dirId=%i filename=%s" userId dirId fileName 
+            }
+            
+        let directoryMove (userId:string) dirId newDirName parentDirId  = 
+            { new Operation<apiModel,Model>() with
+                member __.Run model =
+                    let modelResponse = Utilities.moveDirectoryModel model userId dirId newDirName parentDirId
+                    match modelResponse.Fail , modelResponse.Success with
+                        | None , Some newModel  ->  currentUpdatedDir <- newModel.currentUpdatedDirId; newModel
+                        | Some error , Some newModel  -> currentUpdatedDir <- newModel.currentUpdatedDirId; newModel
+                        | _ , _ -> model
+                member op.Check (sut,model) =
+                    let sutResponse = Utilities.moveDirecotrySut model userId dirId newDirName parentDirId
+                    match sutResponse.Fail , sutResponse.Success  with
+                        | _ , _t  ->  true.ToProperty
+                    |@ sprintf "moveFile: "
+                override __.ToString() = sprintf "Move file for user=%s dirId=%i " userId dirId 
+            }    
         let create = 
             { new Setup<apiModel,Model>() with
                 member __.Actual() = apiModel()
@@ -178,6 +246,7 @@ module testSuite =
                         directoryVersions = []
                         dirStructures = []
                         userId = "101"
+ 
                         }
                     let gg =
                         Some(listFilesResult.Success.Value.fileList).Value |> List.map (fun e ->
@@ -195,7 +264,9 @@ module testSuite =
                     let dirStruc1 = match sss.Success with
                         | Some c -> c 
                     let v = tempx |> List.map (fun  e -> {e with directoryVersions = dir}) |> List.map (fun e -> { e with dirStructures = dirStruc1 })
-                    let l = v |> List.map (fun e -> {e with userFiles = e.userFiles.Add("16" , CRUD).Add("9" , R).Add("18", R).Add("17",R)})
+                    let l = v |> List.map (fun e ->
+                        {e with userFiles = e.userFiles.Add("16" , CRUD).Add("9" , R).Add("18", R).Add("17",R)}
+                        )
                     let listFilesResult1 = API.listFiles "100"
                     let listFilesResult2 = API.listFiles "101"
                     let temp1 =
@@ -212,10 +283,14 @@ module testSuite =
                             | Some c -> c
                             }
                             )
-                    let addedFile4 = {metadata = {id = 4; version = 1; versionChanged = 1; name = "INTRO.txt";parentId = 9; timestamp = "637479675580000000"}; content = "INTRO.txt located at /Users/Shared files/INTRO.txt
- USER_ID=100 (rw) can read and write content to the file, but USER_ID=101 (ro) can only read it. USER_ID=102 (none) has no access it."}::[]
-                    //let currentfileId = (Utilities.getCurrentFileId Utilities.getFileListAPI)+1
-                    {users = g@l; files = temp1@temp2; currentFileId = currentFileId}
+                    let file4Meta = API.fileMetaInformationByFileId "100" "4"
+                    let file4Content = API.downloadFile "100" "4"
+                    let files = match file4Meta.Success , file4Meta.Fail , file4Content.Success , file4Content.Fail with
+                        | Some meta , None , Some cont , None  -> temp1@temp2@{metadata = {id = meta.id; version = meta.version; versionChanged = meta.versionChanged; parentId = meta.parentId; timestamp = meta.timestamp; name = meta.name}; content = cont}::[]
+                        | None , Some s , None , Some e  -> temp1@temp2
+                        | _ , _ , _ , _f  -> temp1@temp2
+                    
+                    {users = g@l; files = files; currentFileId = currentFileId; deletedFileVersion = 0; currentUpdatedFile = 0; currentDirId = currentDirId; currentUpdatedDirId = 0}
                     
          }
             
@@ -223,8 +298,8 @@ module testSuite =
         let name = Gen.elements ["a"; "b"; "c"; "d"]
         let user = Gen.elements ["100"; "101"]
         let fileNameGen = Gen.elements ["test1.txt"; "test2.txt";  ]
-        let fileIdGen = Gen.choose(2,3)
-        let dirIdGen = Gen.choose(15,16)
+        let fileIdGen = Gen.choose(2,5)
+        let dirIdGen = Gen.choose(14,16)
         { new Machine<apiModel,Model>() with
             member __.Setup = create |> Gen.constant |> Arb.fromGen
             member __.Next _ =
@@ -235,9 +310,12 @@ module testSuite =
                 let dirStrcutureGen = [Gen.map dirStructure user]
                 let createFileGen = [Gen.map3 createFile user dirIdGen fileNameGen ]
                 let moveFileGen = [Gen.map4 movefile user fileIdGen dirIdGen fileNameGen ]
-                Gen.oneof (uploadFileGen  @  dirStrcutureGen@  downloadFileGen@ listFilesGen @  createFileGen @ moveFileGen @ fileMetaInformationGen) }
+                let updateTimestampGen = [Gen.map2 updateFileTimeStamp user fileIdGen ]
+                let fileDeleteGen = [Gen.map2 fileDelete user fileIdGen ]
+                let createDirectoryGen = [Gen.map3 createDirectory user dirIdGen fileNameGen]
+                Gen.oneof (fileDeleteGen @   downloadFileGen @uploadFileGen  @  dirStrcutureGen@  createFileGen @ moveFileGen  @ updateTimestampGen@listFilesGen @ fileMetaInformationGen  @ dirStrcutureGen) }
 
-    let config =  Config.Verbose
+    let config =  {Config.Verbose with MaxTest = 400}
     
     type stateTest =
         static member ``test2`` = StateMachine.toProperty spec 

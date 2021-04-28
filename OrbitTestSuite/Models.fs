@@ -71,10 +71,10 @@ module ApiResponseModels =
 
     type directoryCreate = {
         name: string
-        id: int
+        id: string
         version: int
         parentId: int
-        newVersion: directoryVersion list
+        newVersions: directoryVersion list
     }
 
     type directoryMove = {
@@ -89,8 +89,33 @@ module ApiResponseModels =
     type directoryDelete = {
         success: bool
     }
+    
+    type permissionResponse = {
+        create: bool
+        read: bool
+        update: bool
+        delete: bool
+    }
+    
+    type parentResponse = {
+        id: int
+    }
+    type SERVCIEDirMetaResponse = {
+        id: int
+        name: string
+        path: string
+        version: int
+        __permissions: permissionResponse option
+        parent: parentResponse
+        is_checked_out: bool
+        is_default: bool
+    }
 
 
+    type SERVICEDirMetaResponseWithUser = {
+        metadata: SERVCIEDirMetaResponse
+        user: string
+    }
 
 
 module Model =
@@ -123,6 +148,7 @@ module Model =
                 directoryVersions: ApiResponseModels.directoryVersion list
                 listFiles: ApiResponseModels.metadata list
                 dirStructures: ApiResponseModels.directoryStructure list
+                
             }
             
 
@@ -132,6 +158,10 @@ module Model =
                 users: User list
                 files: File list
                 currentFileId: int
+                deletedFileVersion: int
+                currentUpdatedFile:int
+                currentDirId:int
+                currentUpdatedDirId: int
             }
         type TestResponse = {
             fail: bool
