@@ -235,7 +235,9 @@ module Utilities =
             let notUser = model.users |> List.find (fun e-> e.userId <> userId)
             let restUsers = notUser::[]
             let modifiedUser = {user with dirStructures = user.dirStructures@file; userFiles = user.userFiles.Add((string model.currentDirId), CRUD)}::[]
-            {Fail = None; Success = Some({model with users = modifiedUser@restUsers; currentDirId = model.currentDirId+1})}
+            let s = Some({dir = (string model.currentDirId); rights = Some(CRUD); user = userId})::[]
+            let c = model.rights
+            {Fail = None; Success = Some({model with users = modifiedUser@restUsers; currentDirId = model.currentDirId+1; rights = c@s })}
         elif fileExists
         then
              {Fail = Some(FileAlreadyExist(409)); Success = Some({model with currentFileId = model.currentDirId+1})}
@@ -307,15 +309,7 @@ module Utilities =
         l |> List.map (fun e -> if (e.metadata.id > currentFileId) then currentFileId <- e.metadata.id else ())
         currentFileId
     
-    type userListDir = {
-        user: string
-        directories: int
-    }
-    
-    type dirAndRights = {
-        dir: string
-        rights: permission option
-    }
+   
     let getAllDirId  userId =
         let dirStrcutures = API.directoryStructure userId
         let dir = match dirStrcutures.Success , dirStrcutures.Fail with
@@ -331,7 +325,7 @@ module Utilities =
         let xxx = res |> List.map (fun e ->
             let s = match e.metadata.__permissions with
                 | None -> None
-                | Some x -> if (x.create && x.read) then Some {dir = string e.metadata.id; rights = Some CRUD } elif (x.create && not x.read) then Some {dir = string e.metadata.id; rights = Some R } else Some {dir = string e.metadata.id; rights = None }
+                | Some x -> if (x.create && x.read) then Some {dir = string e.metadata.id; rights = Some CRUD; user = e.user } elif (not x.create && x.read) then Some {dir = string e.metadata.id; rights = Some R; user = e.user } else Some {dir = string e.metadata.id; rights = None; user = e.user }
             s
              )
         xxx
@@ -420,4 +414,4 @@ module Utilities =
                         | None , Some s , None , Some e  -> temp1@temp2
                         | _ , _ , _ , _f  -> temp1@temp2
                     //let currentfileId = (Utilities.getCurrentFileId Utilities.getFileListAPI)+1
-                    {users = g@l; files = files; currentFileId = 0; deletedFileVersion = 0; currentUpdatedFile = 0; currentDirId = 0; currentUpdatedDirId = 0}
+                    {users = g@l; files = files; currentFileId = 0; deletedFileVersion = 0; currentUpdatedFile = 0; currentDirId = 0; currentUpdatedDirId = 0; rights = []}

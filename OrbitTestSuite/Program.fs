@@ -1,7 +1,8 @@
 ﻿// Learn more about F# at http://docs.microsoft.com/dotnet/fsharp
 
-open System
+open System.Threading
 open OrbitTestSuite.API
+open OrbitTestSuite.DockerIntegration
 open OrbitTestSuite.Models.Model
 open OrbitTestSuite.TestSuite
 open OrbitTestSuite.Utilities
@@ -14,6 +15,8 @@ open OrbitTestSuite.Test.test
 [<EntryPoint>]
 let main argv =
     // Start testsuite
+    //let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=1 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
+    //Thread.Sleep 500
     testSuite.start
     //let s = API.createFile "100" "15" "test1.txt" "637479675580000000"
     //let v = API.createFile "100" "15" "test1.txt" "637479675580000000"
@@ -43,14 +46,6 @@ let main argv =
     *)
     //let res = API.createFile "100" "15" "test1.dd" "637479675580000000"
     
-    let t2 = Branch ("a", [Branch ("b", [Leaf "c"; Leaf "d"]); Branch ("e", [Leaf "f"; Leaf "g"])])
-
-    let rec checkstuff tree =
-        match tree with
-        | Leaf _ -> true
-        | Branch (node, children) ->
-        List.fold ( || ) false (List.map checkstuff children)
-        
-    let s = checkstuff t2 
     
+    let r =  Docker.executeShellCommand "docker stop" |> Async.RunSynchronously 
     0 // return an integer exit code

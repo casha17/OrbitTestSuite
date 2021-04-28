@@ -117,6 +117,12 @@ module ApiResponseModels =
         user: string
     }
 
+     type userListDir = {
+        user: string
+        directories: int
+    }
+    
+   
 
 module Model =
     
@@ -141,6 +147,12 @@ module Model =
             | CRUD
             | R
             
+            
+         type dirAndRights = {
+            dir: string
+            rights: permission option
+            user: string
+        }
         type User =
             {
                 userFiles: Map<string,permission>
@@ -162,6 +174,7 @@ module Model =
                 currentUpdatedFile:int
                 currentDirId:int
                 currentUpdatedDirId: int
+                rights: dirAndRights option list
             }
         type TestResponse = {
             fail: bool
@@ -183,4 +196,3 @@ module Model =
             Fail: ErrorCodes option
             Success : 'a option
         }
-    

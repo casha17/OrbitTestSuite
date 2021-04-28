@@ -1,11 +1,14 @@
 namespace OrbitTestSuite.TestSuite
 
 
+open System.Threading
 open FsCheck
+open FsCheck.Arb
 open FsCheck.Experimental
 
 
 open FsCheck.Random
+open OrbitTestSuite.DockerIntegration
 open OrbitTestSuite.Models.Model
 open OrbitTestSuite.Models.ApiResponseModels
 open OrbitTestSuite.API
@@ -125,7 +128,7 @@ module testSuite =
                     let sutResponse = API.createFile userId (string dirId) fileName "637479675580000000"
                     match sutResponse.Fail , sutResponse.Success  with
                         | _ , _t  ->  true.ToProperty
-                    |@ sprintf "FileMetaInformation: "
+                    |@ sprintf "FileMetaInformation:"
                 override __.ToString() = sprintf "Create file for user=%s dirId=%i filename=%s" userId dirId fileName 
             }
             
@@ -190,7 +193,7 @@ module testSuite =
                     let sutResponse = API.directoryCreate userId (string dirId) fileName "1"
                     match sutResponse.Fail , sutResponse.Success  with
                         | _ , _t  ->  true.ToProperty
-                    |@ sprintf "FileMetaInformation: "
+                    |@ sprintf "FileMetaInformation:"
                 override __.ToString() = sprintf "Create file for user=%s dirId=%i filename=%s" userId dirId fileName 
             }
             
@@ -213,6 +216,9 @@ module testSuite =
             { new Setup<apiModel,Model>() with
                 member __.Actual() = apiModel()
                 member __.Model() =
+                    let r = Docker.executeShellCommand "docker stop orbit" |> Async.RunSynchronously
+                    let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=1 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
+                    Thread.Sleep 4000
                     let listFilesResult = API.listFiles "100"
                     let temp =
                            {
@@ -246,7 +252,6 @@ module testSuite =
                         directoryVersions = []
                         dirStructures = []
                         userId = "101"
- 
                         }
                     let gg =
                         Some(listFilesResult.Success.Value.fileList).Value |> List.map (fun e ->
@@ -289,20 +294,22 @@ module testSuite =
                         | Some meta , None , Some cont , None  -> temp1@temp2@{metadata = {id = meta.id; version = meta.version; versionChanged = meta.versionChanged; parentId = meta.parentId; timestamp = meta.timestamp; name = meta.name}; content = cont}::[]
                         | None , Some s , None , Some e  -> temp1@temp2
                         | _ , _ , _ , _f  -> temp1@temp2
-                    
-                    {users = g@l; files = files; currentFileId = currentFileId; deletedFileVersion = 0; currentUpdatedFile = 0; currentDirId = currentDirId; currentUpdatedDirId = 0}
+                    let rights1 = Utilities.getAllDirId "100"
+                    let rights2 = Utilities.getAllDirId "101"
+                    let rightsCom = rights1@rights2
+                    {users = g@l; files = files; currentFileId = currentFileId; deletedFileVersion = 0; currentUpdatedFile = 0; currentDirId = currentDirId; currentUpdatedDirId = 0; rights = rightsCom}
                     
          }
             
             
         let name = Gen.elements ["a"; "b"; "c"; "d"]
-        let user = Gen.elements ["100"; "101"]
-        let fileNameGen = Gen.elements ["test1.txt"; "test2.txt";  ]
-        let fileIdGen = Gen.choose(2,5)
-        let dirIdGen = Gen.choose(14,16)
+        let user = Gen.elements ["100";]
+        let fileNameGen = Gen.elements ["test1.txt";  ]
+        let fileIdGen = Gen.choose(2,100)
+        let dirIdGen = Gen.choose(15,15)
         { new Machine<apiModel,Model>() with
             member __.Setup = create |> Gen.constant |> Arb.fromGen
-            member __.Next _ =
+            member __.Next model =
                 let uploadFileGen = [  Gen.map3  uploadFile name user fileIdGen ]
                 let downloadFileGen = [Gen.map2 downloadFile user fileIdGen]
                 let listFilesGen = [Gen.map listFiles user ]
@@ -313,9 +320,9 @@ module testSuite =
                 let updateTimestampGen = [Gen.map2 updateFileTimeStamp user fileIdGen ]
                 let fileDeleteGen = [Gen.map2 fileDelete user fileIdGen ]
                 let createDirectoryGen = [Gen.map3 createDirectory user dirIdGen fileNameGen]
-                Gen.oneof (fileDeleteGen @   downloadFileGen @uploadFileGen  @  dirStrcutureGen@  createFileGen @ moveFileGen  @ updateTimestampGen@listFilesGen @ fileMetaInformationGen  @ dirStrcutureGen) }
+                Gen.oneof (createFileGen(*createDirectoryGen@fileDeleteGen @   downloadFileGen @uploadFileGen  @  dirStrcutureGen @ moveFileGen  @ updateTimestampGen@listFilesGen @ fileMetaInformationGen  @ dirStrcutureGen*)) }
 
-    let config =  {Config.Verbose with MaxTest = 400}
+    let config =  Config.Verbose
     
     type stateTest =
         static member ``test2`` = StateMachine.toProperty spec 
