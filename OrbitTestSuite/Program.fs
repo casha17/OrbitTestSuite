@@ -15,15 +15,11 @@ open OrbitTestSuite.Test.test
 [<EntryPoint>]
 let main argv =
     // Start testsuite
-    //let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=1 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
+    let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
     //Thread.Sleep 500
     testSuite.start
     //let s = API.createFile "100" "15" "test1.txt" "637479675580000000"
     //let v = API.createFile "100" "15" "test1.txt" "637479675580000000"
-   // let testData = Utilities.getTestData
-   // let s = Utilities.getAllDirId "100"
-    //let s = Utilities.fileDeleteModel testData "100" 2 
-    //let s = Utilities.getCurrentFileId testData.files
    // printf "%i" s
     //printf "%A" testData.users
     //let s = Utilities.downloadFileModel testData "101" "2" 
@@ -47,5 +43,5 @@ let main argv =
     //let res = API.createFile "100" "15" "test1.dd" "637479675580000000"
     
     
-    let r =  Docker.executeShellCommand "docker stop" |> Async.RunSynchronously 
+    //let r =  Docker.executeShellCommand "docker stop" |> Async.RunSynchronously 
     0 // return an integer exit code

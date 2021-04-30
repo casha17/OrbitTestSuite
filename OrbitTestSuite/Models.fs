@@ -1,6 +1,6 @@
 namespace OrbitTestSuite.Models
 
-
+open HttpFs.Client
 
 module ApiResponseModels =
     
@@ -100,7 +100,7 @@ module ApiResponseModels =
     type parentResponse = {
         id: int
     }
-    type SERVCIEDirMetaResponse = {
+    type DirMetaResponse = {
         id: int
         name: string
         path: string
@@ -112,8 +112,8 @@ module ApiResponseModels =
     }
 
 
-    type SERVICEDirMetaResponseWithUser = {
-        metadata: SERVCIEDirMetaResponse
+    type DirMetaResponseWithUser = {
+        metadata: DirMetaResponse
         user: string
     }
 
@@ -146,24 +146,40 @@ module Model =
         type permission =
             | CRUD
             | R
+            | NonePermission
             
             
          type dirAndRights = {
             dir: string
-            rights: permission option
+            rights: permission 
             user: string
         }
         type User =
             {
-                userFiles: Map<string,permission>
+                (*userFiles: Map<string,permission>*)
                 userId: string
-                directoryVersions: ApiResponseModels.directoryVersion list
-                listFiles: ApiResponseModels.metadata list
+                //listFiles: ApiResponseModels.metadata list
                 dirStructures: ApiResponseModels.directoryStructure list
                 
             }
             
+            type ResponseCode =
+                | CreateFileSuccess of ApiResponseModels.createFile
+                | NotFound
+                | Conflict
+                | Unauthorized
+                | NoUserIdSupplied of int
+                | FileNotFound of int
+                | MissingUserId of int
+                | FileAlreadyExist of int
+                | ParentDirectoryNotFound of int
+                | InvalidFileName of int
+                | FilePathTooLong of int
+                
+        
 
+           
+            
         [<StructuredFormatDisplay("Model: {files}")>]
         type Model =
             {
@@ -174,25 +190,23 @@ module Model =
                 currentUpdatedFile:int
                 currentDirId:int
                 currentUpdatedDirId: int
-                rights: dirAndRights option list
+                rights: dirAndRights list
+                //directoryVersions: ApiResponseModels.directoryVersion list
+                sutResponse : ResponseCode option
+                directories: ApiResponseModels.directoryStructure list
             }
+            
+         
         type TestResponse = {
             fail: bool
             content: Model option
         }
         
-        type ErrorCodes =
-            NoUserIdSupplied of int
-            | FileNotFound of int
-            | MissingUserId of int
-            | FileAlreadyExist of int
-            | ParentDirectoryNotFound of int
-            | InvalidFileName of int
-            | FilePathTooLong of int
-            | Unauthorized of int
-            
+      
             
         type listFileResponse<'a> = {
-            Fail: ErrorCodes option
+            Fail: ResponseCode option
             Success : 'a option
         }
+
+        
