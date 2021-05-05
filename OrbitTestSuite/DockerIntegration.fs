@@ -5,6 +5,8 @@ open System.Threading.Tasks
 
 module Docker =
     
+ 
+    
     type CommandResult = { 
       ExitCode: int; 
       StandardOutput: string;

@@ -1,6 +1,7 @@
 namespace OrbitTestSuite.TestSuite
 
 
+open System
 open System.Threading
 open FsCheck
 open FsCheck.Arb
@@ -13,27 +14,39 @@ open OrbitTestSuite.Utilities
 open OrbitTestSuite.InMemoryModel
 
 module testSuite =
+    
+    exception UploadFileException
+    exception MoveFileException
+    
+    let docker = apiModel()
     let spec =
-
         
-        (*
-        let uploadFile content userId (fileId:int) = 
+        let uploadFile content userId (fileId:int) fileVersion timestamp = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
-                    let s = Utilities.uploadFileModel model content userId  fileId
-                    match s.Fail , s.Success with
-                        | None , Some c ->  c
-                        | Some c , None-> model
-                        | _ , _ -> model
+                    let modelResponse = Utilities.uploadFileModel model content userId  fileId fileVersion timestamp
+                    match modelResponse.Fail , modelResponse.Success with
+                        | None , Some newModel ->  newModel
+                        | Some error , None-> {model with sutResponse = Some(error)}
+                        | _ , _ -> raise UploadFileException
 
-                member op.Check (sut,model) =
-                    let response = Utilities.uploadFileSut model content userId fileId 
-                    match response.Fail , response.Success with
-                        | _ , _  ->  true.ToProperty // True in both writing and not writing
-                    |@ sprintf "post content %s " content
-                override __.ToString() = sprintf "uploadFile: content: %s toUser:%s fileId:%i" content userId fileId
+                member op.Check (systemUnderTest,model) =
+                    let response = API.fileUpload content userId (string fileId) (string fileVersion) timestamp
+                    match response.Fail , response.Success, model.sutResponse with
+                        | None , Some sut , Some model -> match model with
+                            | UploadFileSuccess m ->
+                            let res = sut = m
+                            res.ToProperty |@ sprintf "Response code after create different:\n Model:%A SUT:%A" m sut 
+                            | _ -> false.ToProperty |@ sprintf "Should not happen that model returns another response code that UploadFileSuccess"
+                        | Some sutError , None , Some modelError -> match sutError , modelError with
+                           | NotFound , NotFound -> true.ToProperty |@ sprintf ""
+                           | Unauthorized , Unauthorized -> true.ToProperty |@ sprintf ""
+                           | Conflict , Conflict -> true.ToProperty |@ sprintf ""
+                           | _ , _ -> false.ToProperty |@ sprintf "Different error response after create: \n SUT:%A MODEL:%A" sutError modelError
+                        | _ , _ , _ -> false.ToProperty |@ sprintf "Model or Sut didnt return success or error"
+                override __.ToString() = sprintf "uploadFile: content: %s toUser:%s fileId:%i fileVersion:%i" content userId fileId fileVersion
             }
-            *)
+
         let downloadFile userId (fileId:int) = 
             { new Operation<apiModel,Model>() with
                 member __.Run model = model
@@ -54,7 +67,7 @@ module testSuite =
                     |@ sprintf "Download file:%i for user: %s " fileId userId 
                    
                 override __.ToString() = sprintf "Downloaded file:%i for user: %s " fileId userId }
-     (*
+     
         let listFiles userId = 
             { new Operation<apiModel,Model>() with
                 member __.Run model = model
@@ -64,7 +77,7 @@ module testSuite =
                     match sutResponse.Fail , sutResponse.Success , modelResponse.Fail , modelResponse.Success with
                         | None , Some s , None , Some m ->
                         let g = s.fileList |> List.sortBy (fun e -> e.id)
-                        let x = m.fileList |> List.sortBy (fun e -> e)
+                        let x = m.fileList |> List.sortBy (fun e -> e.id)
                         let v = g = x
                         v.ToProperty
                         | Some sut , None , Some model , None -> 
@@ -75,7 +88,7 @@ module testSuite =
                     |@ sprintf "list files SUT: %A - MODEL: %A " sutResponse.Success modelResponse.Success
                 override __.ToString() = sprintf "listfiles for user=%s" userId
             }
-             
+
         let fileMetaInformation userId (fileId:int) = 
             { new Operation<apiModel,Model>() with
                 member __.Run model = model
@@ -85,17 +98,16 @@ module testSuite =
                     match sutResponse.Fail , sutResponse.Success , modelResponse.Fail , modelResponse.Success with
                         | None , Some s , None , Some m ->
                             let v = s = m
-                            v.ToProperty()
+                            v.ToProperty() |@ sprintf "fileMeta different model:  %A SUT: %A" m s
                         | Some sut , None , Some model , None -> 
                             match sut , model with
-                                | FileNotFound x , FileNotFound y  -> true.ToProperty()
-                                | Unauthorized x , Unauthorized y -> true.ToProperty()
+                                | NotFound , NotFound  -> true.ToProperty()
+                                | Unauthorized , Unauthorized -> true.ToProperty()
                                 | _  , _  -> false.ToProperty()
                         | _ , _ , _ , _ -> printf "should never reach this state"; false.ToProperty()
-                    |@ sprintf "model:  %A SUT: %A" modelResponse.Success  sutResponse.Success
                 override __.ToString() = sprintf "fileMetaInformation for user=%s fileId=%i" userId fileId
             }
-            
+                   
         let dirStructure userId  = 
             { new Operation<apiModel,Model>() with
                 member __.Run model = model
@@ -108,14 +120,12 @@ module testSuite =
                         v.ToProperty
                         | Some sut , None , Some model , None -> 
                             match sut , model with
-                                | FileNotFound x , FileNotFound y  -> true.ToProperty
-                                | Unauthorized x , Unauthorized y -> true.ToProperty
                                 | _  , _  -> false.ToProperty
                         | _ , _ , _ , _ -> printf "should never reach this state"; false.ToProperty
                     |@ sprintf "FileMetaInformation: "
                 override __.ToString() = sprintf "DirStructure for user=%s " userId 
             }
-            *)
+       
         let createFile (userId:string) dirId fileName  = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
@@ -129,46 +139,46 @@ module testSuite =
                         | None , Some sut , Some model  -> match model with
                             | CreateFileSuccess m ->
                                 let s = (sut = m)
-                                s.ToProperty
-                            | _ -> false.ToProperty
+                                s.ToProperty |@ sprintf "%A" (sut=m)
+                            | _ -> false.ToProperty |@ "false"
                         | Some sutError , None , Some modelError -> match sutError , modelError with
-                            | Unauthorized , Unauthorized -> true.ToProperty
-                            | Conflict , Conflict -> true.ToProperty
-                            | NotFound , NotFound -> true.ToProperty
-                            | _ , _ -> false.ToProperty
-                        | _ , _ , _ -> false.ToProperty
+                            | Unauthorized , Unauthorized -> true.ToProperty |@ "true"
+                            | Conflict , Conflict -> true.ToProperty |@ "true"
+                            | NotFound , NotFound -> true.ToProperty |@ "true"
+                            | _ , _ -> printf "SUT:%A - MODEL:%A" sut model; false.ToProperty |@ "false"
+                        | _ , _ , _ ->printf "SUT:%A - MODEL:%A" sut model; false.ToProperty |@ "false"
                                 
-                    |@
-                     match sutResponse.Fail,sutResponse.Success , model.sutResponse with
-                        | None , Some sut , Some model  -> match model with
-                            | CreateFileSuccess m -> sprintf "Success: SUT:%A Model:%A" sut m 
-                            | _ -> sprintf "createfile: SUT:%A Model:%A" sut model 
-                        | Some sutError , None , Some modelError -> match sutError , modelError with
-                            | Unauthorized , Unauthorized ->sprintf "createfile Aunathorized : SUT: Model:" 
-                            | Conflict , Conflict -> sprintf "createfile: Conflict SUT: Model:" 
-                            | NotFound , NotFound -> sprintf "createfile: NotFound SUT: Model:"  
-                            | _ , _ -> sprintf "createfile: SUT:%A Model:%A" sutError modelError 
-                        | _ , _ , _ -> sprintf "createfile: SUT:%A Model:%A - " sut model 
+                    
                 override __.ToString() = sprintf "Create file for user=%s dirId=%i filename=%s" userId dirId fileName 
             }
-            (*
-        let movefile (userId:string) fileId dirId newFileName  = 
+           
+        let movefile (userId:string) fileId dirId newFileName fileVersion  = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
-                    let modelResponse = Utilities.moveFileModel model userId fileId dirId newFileName
+                    let modelResponse = Utilities.moveFileModel model userId  fileId dirId newFileName fileVersion
                     match modelResponse.Fail , modelResponse.Success with
-                        | None , Some newModel  ->  currentFileId <- newModel.currentFileId; newModel
-                        | Some error , Some newModel  -> currentFileId <- newModel.currentFileId; newModel
-                        | _ , _ -> model
+                        | None , Some newModel ->  newModel
+                        | Some error , None -> {model with sutResponse = Some(error)}
+                        | _ , _ -> raise MoveFileException
                 member op.Check (sut,model) =
-                    let sutResponse = Utilities.MoveFileSut model userId fileId dirId newFileName 
-                    match sutResponse.Fail , sutResponse.Success  with
-                        | _ , _t  ->  true.ToProperty
-                    |@ sprintf "moveFile: "
-                override __.ToString() = sprintf "Move file for user=%s dirId=%i fileId=%i filename=%s" userId dirId fileId  newFileName
+                    let response = API.fileMove userId (string fileId) (string fileVersion) (string dirId) newFileName 
+                    match response.Fail , response.Success, model.sutResponse with
+                        | None , Some sut , Some model -> match model with
+                            | MoveFileSuccess m ->
+                            let res = sut = m
+                            res.ToProperty |@ sprintf "Response code after create different:\n Model:%A SUT:%A" m sut 
+                            | _ -> false.ToProperty |@ sprintf "Should not happen that model returns another response code that UploadFileSuccess"
+                        | Some sutError , None , Some modelError -> match sutError , modelError with
+                           | NotFound , NotFound -> true.ToProperty |@ sprintf ""
+                           | Unauthorized , Unauthorized -> true.ToProperty |@ sprintf ""
+                           | Conflict , Conflict -> true.ToProperty |@ sprintf ""
+                           | DirectoryNotFound , DirectoryNotFound -> true.ToProperty |@ sprintf ""
+                           | _ , _ -> false.ToProperty |@ sprintf "Different error response after create: \n SUT:%A MODEL:%A" sutError modelError
+                        | _ , _ , _ -> false.ToProperty |@ sprintf "Model or Sut didnt return success or error"
+                override __.ToString() = sprintf "Move file for user=%s dirId=%i fileId=%i filename=%s version:=%i" userId dirId fileId  newFileName fileVersion
             }    
                 
-         
+         (* 
         let updateFileTimeStamp (userId:string) fileId   = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
@@ -235,16 +245,20 @@ module testSuite =
             *) 
         let create = 
             { new Setup<apiModel,Model>() with
-                member __.Actual() = apiModel()
-                member __.Model() =
-                    
-                    let r = Docker.executeShellCommand "docker stop orbit" |> Async.RunSynchronously
+                
+                
+                member __.Actual() =
+                    let r = Docker.executeShellCommand "Docker stop orbit" |> Async.RunSynchronously
                     let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
-                    Thread.Sleep 5000
-                    {
+                    Thread.Sleep 2000
+                    apiModel()
+                member __.Model() =
+                    let model = {
                         users = [
                             {
                                 userId = "100"
+                                listFiles = [{id = 2; name="README.txt";parentId = 15;version=1;versionChanged=1;timestamp="637479675580000000"}]
+                                directoryVersions = [{id=15; version = 1};{id=17;version=1};{id=18;version=1}]
                                 dirStructures = [
                                     {id=15;parentId=None;name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1}
                                     {id=17;parentId=None;name="";rootPath="/Projects/Project 1/";rootId=17;rootIsDefault=false;version=1}
@@ -254,6 +268,8 @@ module testSuite =
                               {
                                 
                                 userId = "101"
+                                listFiles = [{id = 3; name="README.txt";parentId = 16;version=1;versionChanged=1;timestamp="637479675580000000"}]
+                                directoryVersions = [{id=16; version = 1};{id=17;version=1};{id=18;version=1}]
                                 dirStructures = [
                                     {id=16;parentId=None;name="";rootPath="/Users/ro/";rootId=16;rootIsDefault=true;version=1}
                                     {id=17;parentId=None;name="";rootPath="/Projects/Project 1/";rootId=17;rootIsDefault=false;version=1}
@@ -264,6 +280,7 @@ module testSuite =
                         files = [
                             {content = "README.txt located at /Users/rw/README.txt\nOnly USER_ID=100 can access it.\n"
                              metadata = {id = 2; name="README.txt";parentId = 15;version=1;versionChanged=1;timestamp="637479675580000000"}}
+                            
                             {
                                 content = "README.txt located at /Users/ro/README.txt\nOnly USER_ID=101 can access it.\n"
                                 metadata = {id = 3; name="README.txt";parentId = 16;version=1;versionChanged=1;timestamp="637479675580000000"}
@@ -300,45 +317,61 @@ module testSuite =
                                     {id=15;parentId=Some(14);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
 
                         ]
-                        //directoryVersions = [{id=15; version = 1};{id=17;version=1};{id=18;version=1}]
+                        
                         sutResponse = None
                         currentFileId = 5
                         deletedFileVersion = 0
                         currentDirId = 0
                         currentUpdatedFile = 0
                         currentUpdatedDirId = 0
-                        rights = [{dir = "17";rights = R; user= "101"}; {dir = "18";rights = R; user = "101"}; {dir = "9"; rights= R; user = "101"}; {dir = "16"; rights=R;user="101"}; {dir = "20";rights=R;user="101"}
+                        rights = [{dir = "17";rights = R; user= "101"}; {dir = "18";rights = R; user = "101"}; {dir = "9"; rights= R; user = "101"}; {dir = "16"; rights=CRUD;user="101"}; {dir = "20";rights=R;user="101"}
                                   {dir = "17";rights = CRUD; user= "100"}; {dir = "18";rights = CRUD; user = "100"}; {dir = "9"; rights= CRUD; user = "100"}; {dir = "15"; rights=CRUD;user="100"};{dir = "20";rights=CRUD;user="100"}]
+                    
                     }
-
+                    model
             
             }
         let name = Gen.elements ["a"; "b"; "c"; "d"]
-        let user = Gen.elements ["100"]
-        let fileNameGen = Gen.elements ["test1.txt";]
-        let dirIdGen = Gen.choose(17,17)
-        let fileIdGen = Gen.choose
-        { new Machine<apiModel,Model>() with
+        
+        let timestampGen = Gen.elements ["637479675580000000"]
+        let fileNameGen = Gen.elements ["test1.txt"; "test2.txt"]
+        //let dirIdGen = Gen.choose(15,15)
+        //let fileIdGen = Gen.choose(5,5)
+        //let fileVersionGen = Gen.choose(1,1)
+        { new Machine<apiModel,Model>(2) with
+            member __.TearDown =
+                upcast DisposeCall<'Actual>()
+            member __.ShrinkOperations s =
+                Arb.Default.FsList().Shrinker s
+                
             member __.Setup = create |> Gen.constant |> Arb.fromGen
             member __.Next model =
+                let user = Gen.frequency [(2, Gen.elements ["100"]); (1, Gen.elements ["100"]);(2, Gen.elements ["100"])]
                 let fileIds = Utilities.getAllFileIds model.files
+                let fileVersions = Utilities.getAllFileVersions model.files
                 let dirIds = Utilities.getALlDirIds model.directories
-                let fileIdGen = Gen.frequency [(5 ,Gen.elements fileIds); (1 ,Gen.choose(40,41))]
-                let dirIdGen = Gen.frequency [(5 ,Gen.elements dirIds); (1 ,Gen.choose(1,50))]
-             //   let uploadFileGen = [  Gen.map3  uploadFile name user fileIdGen ]
+                let fileIdGen = Gen.frequency [(10 ,Gen.elements fileIds); (1 ,Gen.choose(40,41))]
+                let dirIdGen = Gen.frequency [(5 ,Gen.elements dirIds); (1 ,Gen.choose(22,50)); ((9 ,Gen.choose(15,16)))]
+                let fileVersionGen = Gen.frequency [(10 ,Gen.elements fileVersions); (1 ,Gen.choose(1,50))]
+                let uploadFileGen = [  Gen.map5  uploadFile name user fileIdGen fileVersionGen timestampGen ]
                 let downloadFileGen = [Gen.map2 downloadFile user fileIdGen]
-             //   let listFilesGen = [Gen.map listFiles user ]
-             //   let fileMetaInformationGen = [Gen.map2 fileMetaInformation user fileIdGen ]
-             //   let dirStrcutureGen = [Gen.map dirStructure user]
+                let listFilesGen = [Gen.map listFiles user ]
+                let fileMetaInformationGen = [Gen.map2 fileMetaInformation user fileIdGen ]
+                let dirStrcutureGen = [Gen.map dirStructure user]
                 let createFileGen = [Gen.map3 createFile user dirIdGen fileNameGen ]
-             //   let moveFileGen = [Gen.map4 movefile user fileIdGen dirIdGen fileNameGen ]
-             //   let updateTimestampGen = [Gen.map2 updateFileTimeStamp user fileIdGen ]
-             //   let fileDeleteGen = [Gen.map2 fileDelete user fileIdGen ]
-             //   let createDirectoryGen = [Gen.map3 createDirectory user dirIdGen fileNameGen]
-                Gen.oneof (createFileGen@downloadFileGen) }
+                let moveFileGen = [Gen.map5 movefile user fileIdGen dirIdGen fileNameGen fileVersionGen ]
+                //let updateTimestampGen = [Gen.map2 updateFileTimeStamp user fileIdGen ]
+                //let fileDeleteGen = [Gen.map2 fileDelete user fileIdGen ]
+                //let createDirectoryGen = [Gen.map3 createDirectory user dirIdGen fileNameGen]
+             
+                let s = Gen.oneof (createFileGen (* @ fileMetaInformationGen @ listFilesGen @ downloadFileGen @ uploadFileGen @ dirStrcutureGen @ moveFileGen*))
+                let a = Arb.fromGen s
+                s
+                }
+                
 
-    let config =  {Config.Verbose with Replay = Some <| Random.StdGen (13,1) }
-    
+    let config =  {Config.Verbose with Replay = Some <| Random.StdGen (544152281,296886096);  }
+    //let config = {Config.Verbose with MaxTest = 10  }
     type stateTest =
         static member ``test2`` = StateMachine.toProperty spec 
 

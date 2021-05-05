@@ -1,6 +1,7 @@
 namespace OrbitTestSuite.Models
 
 open HttpFs.Client
+open System
 
 module ApiResponseModels =
     
@@ -126,14 +127,14 @@ module ApiResponseModels =
 
 module Model =
     
-    [<StructuredFormatDisplay("meta:{metadata}")>]
+
     type File =
             {
                 content: string
                 metadata: ApiResponseModels.metadata
             }
     
-        [<StructuredFormatDisplay("id:{id}, version:{version}")>]
+
         type Modelmetadata = {
             id: string
             name: string
@@ -158,16 +159,20 @@ module Model =
             {
                 (*userFiles: Map<string,permission>*)
                 userId: string
-                //listFiles: ApiResponseModels.metadata list
+                directoryVersions: ApiResponseModels.directoryVersion list
+                listFiles: ApiResponseModels.metadata list
                 dirStructures: ApiResponseModels.directoryStructure list
                 
             }
             
             type ResponseCode =
                 | CreateFileSuccess of ApiResponseModels.createFile
+                | UploadFileSuccess of ApiResponseModels.fileUpload
                 | NotFound
                 | Conflict
                 | Unauthorized
+                | DirectoryNotFound
+                | MoveFileSuccess of ApiResponseModels.moveFile
                 | NoUserIdSupplied of int
                 | FileNotFound of int
                 | MissingUserId of int
@@ -180,7 +185,7 @@ module Model =
 
            
             
-        [<StructuredFormatDisplay("Model: {files}")>]
+        [<StructuredFormatDisplay("{DisplayValue}")>]
         type Model =
             {
                 users: User list
@@ -191,12 +196,21 @@ module Model =
                 currentDirId:int
                 currentUpdatedDirId: int
                 rights: dirAndRights list
-                //directoryVersions: ApiResponseModels.directoryVersion list
                 sutResponse : ResponseCode option
                 directories: ApiResponseModels.directoryStructure list
             }
             
-         
+        type Model with
+        
+            override t.ToString() =
+                (*
+                let files = (t.files |> List.map (fun e -> "\n\t id:" + (string e.metadata.id) + " parentId:" +  (string e.metadata.parentId) + " version:" + (string e.metadata.version) + " content:"  + e.content.Replace("\n" , "") )) |> List.fold (+) "" 
+                sprintf "\nfiles:%s - currentFileId:%i  \n\n" files  t.currentFileId
+                *)
+                let files = (t.files |> List.map (fun e -> "[id:" + (string e.metadata.id) + " version:" + (string e.metadata.version) + "]"  )) |> List.fold (+) ""
+                sprintf "files:%s - currentFileId:%i" files  t.currentFileId
+            member t.DisplayValue = t.ToString()
+                
         type TestResponse = {
             fail: bool
             content: Model option

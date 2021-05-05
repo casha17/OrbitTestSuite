@@ -110,9 +110,12 @@ module API =
             |> run
         match result.statusCode with
             | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.metadata> |> createSuccess
-            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailNoFileFound 404
-            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
-            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailNoFileFound 404
+            | s when s = 401 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(Unauthorized); Success = None}
+            | s when s = 404 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(NotFound); Success = None}
 
     let fileMetaInformationByFileName userId parentId fileName = 
         
@@ -185,12 +188,21 @@ module API =
         
         match result.statusCode with
             | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.moveFile> |> createSuccess
-            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
-            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
-            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
-            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
-            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
-            | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
+            | s when s = 400 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(DirectoryNotFound); Success = None}
+            | s when s = 401 -> 
+                 let res = Response.readBodyAsString result |> run
+                 {Fail = Some(Unauthorized); Success = None} 
+            | s when s = 404 ->
+                 let res = Response.readBodyAsString result |> run
+                 {Fail = Some(NotFound); Success = None}
+            | s when s = 409 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(Conflict); Success = None}
+            | _  ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = None; Success = None}
             
     let updateFileTimestamp userId fileId fileVersion fileTimestamp = 
         let result =
@@ -216,12 +228,16 @@ module API =
         
         match result.statusCode with
             | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.fileUpload> |> createSuccess
-            | s when s = 400 -> Response.readBodyAsString result |> run |> createFailInvalidFileName 400
-            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
-            | s when s = 404 -> Response.readBodyAsString result |> run |> createFailParentDirectoryNotFound 404
-            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
-            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
-        
+            | s when s = 401 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(Unauthorized); Success = None}
+            | s when s = 404 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(NotFound); Success = None}
+            | s when s = 409 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(Conflict); Success = None}
+            | _ -> {Fail = None; Success = None}
     
     type lockState  = Lock | Release
 
