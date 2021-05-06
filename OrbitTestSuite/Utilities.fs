@@ -9,6 +9,7 @@ module Utilities =
         | user::users -> if user.userId = userId then Some(user) else tryGetUser users userId
         | [] -> None
    
+   
     let rec tryGetFileInSameDirWithSameName (list:File list) fileName dirId = match list with
         | file::files -> if (file.metadata.parentId <> dirId && file.metadata.name = fileName) then Some(file) else tryGetFileInSameDirWithSameName files fileName dirId
         | [] -> None
@@ -286,8 +287,8 @@ module Utilities =
                             | Some user ->
                                 let dirMovingToCheckedOut = tryGetCheckedOutDir user.directoryVersions dirId
                                 let dirMovingFromCheckedOut = tryGetCheckedOutDir user.directoryVersions file.metadata.parentId
-                                let fileExists = tryGetFileByNameAndDir model.files fileName dirId
-                                match dirMovingFromCheckedOut , dirMovingToCheckedOut , fileExists with
+                                let fileExistsInDir = tryGetFileByNameAndDir model.files fileName dirId
+                                match dirMovingFromCheckedOut , dirMovingToCheckedOut , fileExistsInDir with
                                 | None , None , Some file -> {Fail = Some(Conflict); Success = None} //
                                 | None , None , None ->  // Update file and not user file list
                                     let files = model.files  |> List.map (fun e ->
@@ -299,7 +300,7 @@ module Utilities =
                                 | Some dirFrom , None , None -> 
                                      let users = model.users |> List.map (fun e ->
                                               if (e.userId = userId)
-                                              then {e with listFiles = e.listFiles |> List.filter (fun e -> e.parentId <> dirFrom.id)  |> List.map (fun s -> if (s.id = fileId) then {s with version = s.version+1; parentId = dirId; name = fileName} else s) }
+                                              then {e with listFiles = e.listFiles |> List.filter (fun e -> e.name <> file.metadata.name)  |> List.map (fun s -> if (s.id = fileId) then {s with version = s.version+1; parentId = dirId; name = fileName} else s) }
                                               else e )
                                      let files = model.files  |> List.map (fun e ->
                                               if (e.metadata.id = fileId)
@@ -331,155 +332,90 @@ module Utilities =
                                               else e )
                                     {Fail = None; Success = Some({model with users = users; files = files; sutResponse = Some(MoveFileSuccess{id = file.metadata.id; version = fileVersion+1; name=fileName})})} 
                 | _ , _ -> {Fail = Some(Unauthorized); Success = None}
-                        
-                
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        (*
-        
+
+
+    let updateFileTimestampModel (model:Model) userId fileId fileVersion timeStamp   =
+        let fileExists = tryGetFileById model.files fileId
         match fileExists with
-            | None -> {Fail = Some(NotFound); Success = None}
-            | Some file ->
-                if (file.metadata.version <> fileVersion)
-                    then
-                        {Fail = Some(Conflict); Success = None}
-                else
-                    let userRights = tryGetRights model.rights (string file.metadata.parentId) userId
-                    match userRights with
-                        | None -> {Fail = Some(Unauthorized); Success = None}
-                        | Some rights ->
-                            let moveToDirExists = tryGetDirectory model.directories dirId
-                            match moveToDirExists with
-                                | None -> {Fail = Some(DirectoryNotFound); Success = None}
-                                | Some dir ->
-                                    let moveToDirRights = tryGetRights model.rights (string dirId) userId
-                                    match moveToDirRights with
-                                        | None -> {Fail = Some(Unauthorized); Success = None}
-                                        | Some rights ->
-                                            match rights with
-                                                | R -> {Fail = Some(Unauthorized); Success = None}
-                                                | NonePermission -> {Fail = Some(Unauthorized); Success = None}
-                                                | CRUD ->
-                                                    /// Because that checked out shit 
-                                                    let userExists = tryGetUser model.users userId
-                                                    match userExists with
-                                                        | None -> {Fail = Some(Unauthorized); Success = None}
-                                                        | Some user ->
-                                                                let fileAlreadyExistsInDir = tryGetFileByNameAndDir model.files fileName dirId
-                                                                match fileAlreadyExistsInDir with
-                                                                    | Some file ->{Fail = Some(Conflict); Success = None}
-                                                                    | None ->
-                                                                        let fileAlreadyExists = tryGetFileInSameDirWithSameName model.files fileName dirId
-                                                                        match fileAlreadyExists with
-                                                                            | Some file -> {Fail = Some(Conflict); Success = None}
-                                                                            | None ->
-                                                                                let dirMovingToCheckedOut = tryGetCheckedOutDir user.directoryVersions dirId
-                                                                                let dirMovingFromCheckedOut = tryGetCheckedOutDir user.directoryVersions file.metadata.parentId
-                                                                                match dirMovingFromCheckedOut , dirMovingToCheckedOut with
-                                                                                    | None, None -> 
-                                                                                        let users = model.users |> List.map (fun e ->
-                                                                                                  if (e.userId = userId)
-                                                                                                  then {e with listFiles = e.listFiles |> List.map (fun s -> if (s.id = fileId) then {s with version = s.version+1; parentId = dirId; name = fileName} else s) }
-                                                                                                  else e )
-                                                                                        let files = model.files  |> List.map (fun e ->
-                                                                                                  if (e.metadata.id = fileId)
-                                                                                                  then {e with metadata = {e.metadata with version = e.metadata.version+1; parentId = dirId;name = fileName }}
-                                                                                                  else e )
-                                                                                        {Fail = None; Success = Some({model with users = users; files = files; sutResponse = Some(MoveFileSuccess{id = file.metadata.id; version = fileVersion+1; name=fileName})})}
-                                                                                    | Some dir, None ->
-                                                                                        let users = model.users |> List.map (fun e ->
-                                                                                                  if (e.userId = userId)
-                                                                                                  then {e with listFiles = e.listFiles |> List.filter (fun e -> e.parentId <> dir.id)  |> List.map (fun s -> if (s.id = fileId) then {s with version = s.version+1; parentId = dirId; name = fileName} else s) }
-                                                                                                  else e )
-                                                                                        let files = model.files  |> List.map (fun e ->
-                                                                                                  if (e.metadata.id = fileId)
-                                                                                                  then {e with metadata = {e.metadata with version = e.metadata.version+1; parentId = dirId;name = fileName }}
-                                                                                                  else e )
-                                                                                        {Fail = None; Success = Some({model with users = users; files = files; sutResponse = Some(MoveFileSuccess{id = file.metadata.id; version = fileVersion+1; name=fileName})})}
-                                                                                    | Some dir, Some toDir ->
-                                                                                        let users = model.users |> List.map (fun e ->
-                                                                                                  if (e.userId = userId)
-                                                                                                  then {e with listFiles = e.listFiles |> List.map (fun s -> if (s.id = fileId) then {s with version = s.version+1; parentId = dirId; name = fileName} else s) }
-                                                                                                  else e )
-                                                                                        let files = model.files  |> List.map (fun e ->
-                                                                                                  if (e.metadata.id = fileId)
-                                                                                                  then {e with metadata = {e.metadata with version = e.metadata.version+1; parentId = dirId;name = fileName }}
-                                                                                                  else e )
-                                                                                        {Fail = None; Success = Some({model with users = users; files = files; sutResponse = Some(MoveFileSuccess{id = file.metadata.id; version = fileVersion+1; name=fileName})})}
-                                                                                     | None, Some toDir ->
-                                                                                        let fileMeta = {file.metadata with name = fileName; version=file.metadata.version+1; parentId=dirId}
-                                                                                        let users = model.users |> List.map (fun e ->
-                                                                                                  if (e.userId = userId)
-                                                                                                  then {e with listFiles = fileMeta::e.listFiles}
-                                                                                                  else e )
-                                                                                        let files = model.files  |> List.map (fun e ->
-                                                                                                  if (e.metadata.id = fileId)
-                                                                                                  then {e with metadata = {e.metadata with version = e.metadata.version+1; parentId = dirId;name = fileName }}
-                                                                                                  else e )
-                                                                                        {Fail = None; Success = Some({model with users = users; files = files; sutResponse = Some(MoveFileSuccess{id = file.metadata.id; version = fileVersion+1; name=fileName})})}
-                                            
-*)
+        | None -> {Fail = Some(NotFound); Success = None}
+        | Some file ->
+            match file.metadata.version = fileVersion with
+            | false ->  {Fail = Some(Conflict); Success = None}
+            | true ->
+                let accessRights = tryGetRights model.rights (string file.metadata.parentId) userId
+                match accessRights with
+                | None -> {Fail = Some(Unauthorized); Success = None}
+                | Some access ->
+                    match access with
+                    | R -> {Fail = Some(Unauthorized); Success = None}
+                    | NonePermission -> {Fail = Some(Unauthorized); Success = None}
+                    | CRUD ->
+                        
+                        let file = model.files |> List.map (fun e -> if (e.metadata.id = (int fileId)) then {e with metadata = {e.metadata with version = fileVersion+1; timestamp = timeStamp}  } else e)
+                        let user = model.users |> List.find (fun e -> e.userId = userId)
+                        let restUsers = model.users |> List.where (fun e -> e.userId <> userId)
+                        let listfiles = user.listFiles |> List.map (fun e -> if e.id = (int fileId) then {e with version = fileVersion+1; timestamp = timeStamp } else e)
+                        let changedUser = {user with listFiles = listfiles}
+                        let s = Some({model with files = file; users = changedUser::restUsers; sutResponse = Some(UpdateTimestampSuccess({timestamp = timeStamp; version = fileVersion+1 }))})
+                        {Fail = None; Success = s}
 
 
-    let updateFileTimestampModel (model:Model) userId fileId timeStamp  =
-        let user = model.users |> List.find (fun e -> e.userId = userId)
-        let file = model.files |> List.tryFind (fun e -> e.metadata.id = fileId)
-        let userWriteAccess = match file with
-           | None -> None
-           | Some fi -> user.userFiles.TryFind (string fi.metadata.parentId)
-        
-        match userWriteAccess with
-            | Some access ->
-                let file = model.files |> List.map (fun e -> if (e.metadata.id = (int fileId)) then {e with metadata = {e.metadata with version = e.metadata.version+1; timestamp = timeStamp}  } else e)
-                let user = model.users |> List.find (fun e -> e.userId = userId)
-                let restUsers = model.users |> List.where (fun e -> e.userId <> userId)
-                let listfiles = user.listFiles |> List.map (fun e -> if e.id = (int fileId) then {e with version = e.version+1; timestamp = timeStamp } else e)
-                let changedUser = {user with listFiles = listfiles}
-                let s = Some({model with files = file; users = changedUser::restUsers})
-                {Fail = None; Success = s}
-            | None ->  {Fail = Some(Unauthorized(401)); Success = None}
-(*
     let updateFileTimestampSut (model:Model) userId fileId timeStamp =
         let user = model.users |> List.find (fun e -> e.userId = userId)
         let file = model.files |> List.tryFind (fun e -> e.metadata.id = fileId)
         match file with
-           | None -> {Fail = Some(Unauthorized(401)); Success = None}
+           | None -> {Fail = Some(Unauthorized); Success = None}
            | Some fi -> API.updateFileTimestamp userId (string fileId) (string (int fi.metadata.version-1)) timeStamp
         
-    let fileDeleteModel (model:Model) userId fileId  =
-        let user = model.users |> List.find (fun e -> e.userId = userId)
-        let file = model.files |> List.tryFind (fun e -> e.metadata.id = fileId)
-        let userWriteAccess = match file with
-            | None -> None
-            | Some fi -> user.userFiles.TryFind (string fi.metadata.parentId)
-        
-        match userWriteAccess with
-            | Some CRUD ->
-                let fileToDelete = model.files |> List.find (fun e -> e.metadata.id = fileId )
-                let file = model.files |> List.filter (fun e -> e.metadata.id <> fileId )
-                let user = model.users |> List.find (fun e -> e.userId = userId)
-                let restUsers = model.users |> List.where (fun e -> e.userId <> userId)
-                let listfiles = user.listFiles |> List.filter (fun e -> e.id <> fileId)
-                let changedUser = {user with listFiles = listfiles}
-                let s = Some({model with files = file; users = changedUser::restUsers; deletedFileVersion = fileToDelete.metadata.version })
-                {Fail = None; Success = s}
-            | Some R ->  {Fail = Some(Unauthorized(401)); Success = None}
-            | None ->  {Fail = Some(Unauthorized(401)); Success = None}
-            
-    let deleteFileSut (model:Model) userId fileId =
-        let s = API.fileDelete userId (string fileId) (string model.deletedFileVersion)
-        s
+    let fileDeleteModel (model:Model) userId fileId fileVersion  =
+        let fileExists = tryGetFileById model.files fileId
+        match fileExists with
+        | None -> {Fail = Some(NotFound); Success = None}
+        | Some file ->
+            match file.metadata.version = fileVersion with
+            | false -> {Fail  =Some(Conflict); Success = None}
+            | true ->
+                let rights = tryGetRights model.rights (string file.metadata.parentId) userId
+                match rights with
+                | None -> {Fail = Some(Unauthorized); Success = None}
+                | Some access -> match access with
+                    | R -> {Fail = Some(Unauthorized); Success = None}
+                    | NonePermission -> {Fail = Some(Unauthorized); Success = None}
+                    | CRUD ->
+                        // tjek om dir er checked out hvis ja så delete i userfile også
+                        let userExists = tryGetUser model.users userId
+                        match userExists with
+                        | None -> {Fail = Some(Unauthorized); Success = None}
+                        | Some user -> match (tryGetCheckedOutDir user.directoryVersions file.metadata.parentId) with
+                            | None ->
+                                
+                                let files = model.files |> List.filter (fun e -> e.metadata.id <> fileId)
+                                {Fail = None; Success = Some({model with files = files; sutResponse = Some(DeleteFileSuccess{success = true})})}
+
+                            | Some dirCheckedOut ->
+                                let users = model.users |> List.map (fun e ->
+                                              if (e.userId = userId)
+                                              then {e with listFiles = e.listFiles |> List.filter (fun e -> e.name <> file.metadata.name)   }
+                                              else e )
+                                let files = model.files |> List.filter (fun e -> e.metadata.id <> fileId)
+                                {Fail = None; Success = Some({model with users = users; files = files; sutResponse = Some(DeleteFileSuccess{success = true})})}
+                         
+
         
   
-    let createDirectoryModel (model:Model) userId (dirId:int) dirName = 
+    let createDirectoryModel (model:Model) userId (dirId:int) dirName dirVersion =
+        let dirExists = tryGetDirectory model.directories dirId
+        match dirExists with
+        | None -> {Fail = Some(NotFound); Success = None}
+        | Some dir -> match tryGetRights model.rights (string dirId) userId with
+            | None -> {Fail = Some(Unauthorized); Success = None}
+            | Some access ->  match dir.version = dirVersion with
+                | false -> {Fail = Some(Conflict); Success = None}
+                | true ->
+                    // Create under user file list dir versions
+                    //create dir in dirList
+                    // check for same name in same dir 
+            
         let readAccess =
             let user = model.users |> List.find (fun e -> e.userId = userId)
             let access = user.userFiles.TryFind (string dirId)
@@ -513,7 +449,8 @@ module Utilities =
             {Fail = Some(Unauthorized(401)); Success = Some({model with currentFileId = model.currentDirId+1})}
         else
             {Fail = Some(Unauthorized(401)); Success = Some({model with currentFileId = model.currentDirId+1})}
-
+      
+             (*
    
         (*    
     let moveDirecotrySut (model:Model) userId (dirId:int) dirName parentDirId  =

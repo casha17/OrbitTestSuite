@@ -31,15 +31,15 @@ let main argv =
     
 
     let testData = Utilities.getTestData
-    //let a = Utilities.moveFileModel testData "99" 40 99 "test1.txt" 34
-    //let b = Utilities.moveFileModel testData "100" 40 99 "test1.txt" 34
-    //let c = Utilities.moveFileModel testData "100" 3 99 "test1.txt" 34
-    //let d = Utilities.moveFileModel testData "100" 3 99 "test1.txt" 1
-    //let e = Utilities.moveFileModel testData "100" 3 16 "test1.txt" 1
-    //let f = Utilities.moveFileModel testData "100" 3 15 "test1.txt" 1
+    let a = Utilities.fileDeleteModel testData "9999" 99 34
+    let b = Utilities.fileDeleteModel testData "9999" 2 34
+    let c = Utilities.fileDeleteModel testData "100" 2 1
+    let d = Utilities.fileDeleteModel c.Success.Value "100" 4 1
+    let e = Utilities.moveFileModel testData "100" 3 16 "test1.txt" 1
+    let f = Utilities.moveFileModel testData "100" 3 15 "test1.txt" 1
 
-   // let g = Utilities.createFileModel testData "100" 15 "test2.txt" //Success
-   // let u = Utilities.createFileModel g.Success.Value "100" 15 "test1.txt" 
+    let g = Utilities.createFileModel testData "100" 15 "test2.txt" //Success
+    let u = Utilities.moveFileModel g.Success.Value  "100" 5 20 "test2.txt" 1
    // let f = Utilities.moveFileModel u.Success.Value  "100" 6 15 "test2.txt" 1 // conflict
     //let c = Utilities.createFileModel f.Success.Value "100" 8 "test2.txt" // success
     //let a = Utilities.createFileModel {f.Success.Value with currentFileId = 8} "100" 15 "test2.txt" // conflict

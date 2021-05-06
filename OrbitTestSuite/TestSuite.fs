@@ -17,6 +17,7 @@ module testSuite =
     
     exception UploadFileException
     exception MoveFileException
+    exception DeleteFileException
     
     let docker = apiModel()
     let spec =
@@ -179,38 +180,59 @@ module testSuite =
             }    
                 
          
-        let updateFileTimeStamp (userId:string) fileId   = 
+        let updateFileTimeStamp (userId:string) fileId fileVersion   = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
-                    let modelResponse = Utilities.updateFileTimestampModel model userId fileId "637479675580000000" 
+                    let modelResponse = Utilities.updateFileTimestampModel model userId fileId fileVersion "637479675580000000" 
                     match modelResponse.Fail , modelResponse.Success with
                         | None , Some newModel  -> newModel
-                        | Some error , Some newModel  -> model
+                        | Some error , None  -> {model with sutResponse = Some(error)}
                         | _ , _ -> model
                 member op.Check (sut,model) =
-                    let sutResponse = Utilities.updateFileTimestampSut model userId fileId "637479675580000000"  
-                    match sutResponse.Fail , sutResponse.Success  with
-                        | _ , _t  ->  true.ToProperty
+                    let sutResponse = API.updateFileTimestamp userId (string fileId) (string fileVersion) "637479675580000000"  
+                    match sutResponse.Fail , sutResponse.Success , model.sutResponse  with
+                        | None , Some sut , Some model -> match model with 
+                            | UpdateTimestampSuccess m ->
+                                let res = sut = m
+                                res.ToProperty()
+                            | _ -> false.ToProperty()
+                        | Some sutError , None , Some modelError -> match sutError , modelError with
+                            | NotFound , NotFound -> true.ToProperty()
+                            | Conflict , Conflict -> true.ToProperty()
+                            | Unauthorized , Unauthorized -> true.ToProperty()
+                            | _ , _ -> false.ToProperty()
+                        | _ , _ , _ -> false.ToProperty()
                     |@ sprintf "UpdateTimestamp: "
                 override __.ToString() = sprintf "update timestamp file for user=%s fileId=%i  " userId  fileId  
             }
-       (*      
-        let fileDelete (userId:string) fileId   = 
+        
+     
+        let fileDelete (userId:string) fileId fileVersion   = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
-                    let modelResponse = Utilities.fileDeleteModel model userId fileId 
+                    let modelResponse = Utilities.fileDeleteModel model userId fileId fileVersion
                     match modelResponse.Fail , modelResponse.Success with
                         | None , Some newModel  -> newModel
-                        | Some error , Some newModel  -> model
-                        | _ , _ -> model
+                        | Some error , None  -> {model with sutResponse = Some(error)}
+                        | _ , _ -> raise DeleteFileException
                 member op.Check (sut,model) =
-                    let sutResponse = Utilities.deleteFileSut model userId fileId   
-                    match sutResponse.Fail , sutResponse.Success  with
-                        | _ , _t  ->  true.ToProperty
-                    |@ sprintf "Delete File: fileID "
-                override __.ToString() = sprintf "Delete file for user=%s fileId=%i  " userId  fileId  
+                    let sutResponse = API.fileDelete userId (string fileId) (string fileVersion)   
+                    match sutResponse.Fail , sutResponse.Success , model.sutResponse  with
+                    | None , Some sut , Some model -> match model with 
+                            | DeleteFileSuccess m ->
+                                let res = sut = m
+                                res.ToProperty()
+                            | _ -> false.ToProperty()
+                    | Some sutError , None , Some modelError -> match sutError , modelError with
+                            | NotFound , NotFound -> true.ToProperty()
+                            | Conflict , Conflict -> true.ToProperty()
+                            | Unauthorized , Unauthorized -> true.ToProperty()
+                            | _ , _ -> false.ToProperty()
+                    | _ , _ , _ -> false.ToProperty()
+                    |@ sprintf "Delete File:  "
+                override __.ToString() = sprintf "Delete file for user=%s fileId=%i fileVersion =%i" userId  fileId  fileVersion
             }
-            
+                (*    
         let createDirectory (userId:string) dirId fileName  = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
@@ -248,8 +270,10 @@ module testSuite =
                 
                 
                 member __.Actual() =
-                    let r = Docker.executeShellCommand "Docker stop orbit" |> Async.RunSynchronously
-                    let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
+                    let res1 = Docker.executeShellCommand "Docker stop orbit" |> Async.RunSynchronously
+                    if (res1.ExitCode <> 0) then printf "ERROR %A - %A" res1.StandardError res1.StandardOutput
+                    let res2 = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
+                    if (res2.ExitCode <> 0) then printf "ERROR %A - %A" res2.StandardError res2.StandardOutput
                     Thread.Sleep 7000
                     apiModel()
                 member __.Model() =
@@ -342,9 +366,6 @@ module testSuite =
             member __.TearDown =
                 upcast DisposeCall<'Actual>()
             member __.ShrinkOperations s =
-                let r = Docker.executeShellCommand "Docker stop orbit" |> Async.RunSynchronously
-                let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
-                Thread.Sleep 7000
                 Arb.Default.FsList().Shrinker s
                 
             member __.Setup = create |> Gen.constant |> Arb.fromGen
@@ -363,18 +384,18 @@ module testSuite =
                 let dirStrcutureGen = [Gen.map dirStructure user]
                 let createFileGen = [Gen.map3 createFile user dirIdGen fileNameGen ] 
                 let moveFileGen = [Gen.map5 movefile user fileIdGen dirIdGen fileNameGen fileVersionGen ]
-                //let updateTimestampGen = [Gen.map2 updateFileTimeStamp user fileIdGen ]
-                //let fileDeleteGen = [Gen.map2 fileDelete user fileIdGen ]
+                let updateTimestampGen = [Gen.map3 updateFileTimeStamp user fileIdGen fileVersionGen ]
+                let fileDeleteGen = [Gen.map3 fileDelete user fileIdGen fileVersionGen ]
                 //let createDirectoryGen = [Gen.map3 createDirectory user dirIdGen fileNameGen]
              
-                let s = Gen.oneof (createFileGen (* @ fileMetaInformationGen @ listFilesGen @ downloadFileGen @ uploadFileGen @ dirStrcutureGen *) @moveFileGen)
+                let s = Gen.oneof (fileDeleteGen@createFileGen @ fileMetaInformationGen @ listFilesGen @ downloadFileGen @ uploadFileGen @ dirStrcutureGen @moveFileGen  @updateTimestampGen)
                 let a = Arb.fromGen s
                 s
                 }
                 
 
     //let config =  {Config.Verbose with Replay = Some <| Random.StdGen (1067203277,296886258);  }
-    let config = {Config.Verbose with MaxTest = 120  }
+    let config = {Config.Verbose with MaxTest = 200  }
     type stateTest =
         static member ``test2`` = StateMachine.toProperty spec 
 

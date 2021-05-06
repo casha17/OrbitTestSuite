@@ -168,6 +168,8 @@ module Model =
             type ResponseCode =
                 | CreateFileSuccess of ApiResponseModels.createFile
                 | UploadFileSuccess of ApiResponseModels.fileUpload
+                | UpdateTimestampSuccess of ApiResponseModels.updateFileTimeStamp
+                | DeleteFileSuccess of ApiResponseModels.fileDelete
                 | NotFound
                 | Conflict
                 | Unauthorized
