@@ -167,18 +167,18 @@ module testSuite =
                             | MoveFileSuccess m ->
                             let res = sut = m
                             res.ToProperty |@ sprintf "Response code after create different:\n Model:%A SUT:%A" m sut 
-                            | _ -> false.ToProperty |@ sprintf "Should not happen that model returns another response code that UploadFileSuccess"
+                            | _ -> false.ToProperty |@ sprintf "Should not happen that model returns another response code that MoveFileSuccess"
                         | Some sutError , None , Some modelError -> match sutError , modelError with
                            | NotFound , NotFound -> true.ToProperty |@ sprintf ""
                            | Unauthorized , Unauthorized -> true.ToProperty |@ sprintf ""
                            | Conflict , Conflict -> true.ToProperty |@ sprintf ""
                            | DirectoryNotFound , DirectoryNotFound -> true.ToProperty |@ sprintf ""
-                           | _ , _ -> false.ToProperty |@ sprintf "Different error response after create: \n SUT:%A MODEL:%A" sutError modelError
+                           | _ , _ -> false.ToProperty |@ sprintf "Different error response after move: \n SUT:%A MODEL:%A" sutError modelError
                         | _ , _ , _ -> false.ToProperty |@ sprintf "Model or Sut didnt return success or error"
                 override __.ToString() = sprintf "Move file for user=%s dirId=%i fileId=%i filename=%s version:=%i" userId dirId fileId  newFileName fileVersion
             }    
                 
-         (* 
+         
         let updateFileTimeStamp (userId:string) fileId   = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
@@ -194,7 +194,7 @@ module testSuite =
                     |@ sprintf "UpdateTimestamp: "
                 override __.ToString() = sprintf "update timestamp file for user=%s fileId=%i  " userId  fileId  
             }
-            
+       (*      
         let fileDelete (userId:string) fileId   = 
             { new Operation<apiModel,Model>() with
                 member __.Run model =
@@ -250,7 +250,7 @@ module testSuite =
                 member __.Actual() =
                     let r = Docker.executeShellCommand "Docker stop orbit" |> Async.RunSynchronously
                     let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
-                    Thread.Sleep 2000
+                    Thread.Sleep 7000
                     apiModel()
                 member __.Model() =
                     let model = {
@@ -338,10 +338,13 @@ module testSuite =
         //let dirIdGen = Gen.choose(15,15)
         //let fileIdGen = Gen.choose(5,5)
         //let fileVersionGen = Gen.choose(1,1)
-        { new Machine<apiModel,Model>(2) with
+        { new Machine<apiModel,Model>() with
             member __.TearDown =
                 upcast DisposeCall<'Actual>()
             member __.ShrinkOperations s =
+                let r = Docker.executeShellCommand "Docker stop orbit" |> Async.RunSynchronously
+                let r = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
+                Thread.Sleep 7000
                 Arb.Default.FsList().Shrinker s
                 
             member __.Setup = create |> Gen.constant |> Arb.fromGen
@@ -358,20 +361,20 @@ module testSuite =
                 let listFilesGen = [Gen.map listFiles user ]
                 let fileMetaInformationGen = [Gen.map2 fileMetaInformation user fileIdGen ]
                 let dirStrcutureGen = [Gen.map dirStructure user]
-                let createFileGen = [Gen.map3 createFile user dirIdGen fileNameGen ]
+                let createFileGen = [Gen.map3 createFile user dirIdGen fileNameGen ] 
                 let moveFileGen = [Gen.map5 movefile user fileIdGen dirIdGen fileNameGen fileVersionGen ]
                 //let updateTimestampGen = [Gen.map2 updateFileTimeStamp user fileIdGen ]
                 //let fileDeleteGen = [Gen.map2 fileDelete user fileIdGen ]
                 //let createDirectoryGen = [Gen.map3 createDirectory user dirIdGen fileNameGen]
              
-                let s = Gen.oneof (createFileGen (* @ fileMetaInformationGen @ listFilesGen @ downloadFileGen @ uploadFileGen @ dirStrcutureGen @ moveFileGen*))
+                let s = Gen.oneof (createFileGen (* @ fileMetaInformationGen @ listFilesGen @ downloadFileGen @ uploadFileGen @ dirStrcutureGen *) @moveFileGen)
                 let a = Arb.fromGen s
                 s
                 }
                 
 
-    let config =  {Config.Verbose with Replay = Some <| Random.StdGen (544152281,296886096);  }
-    //let config = {Config.Verbose with MaxTest = 10  }
+    //let config =  {Config.Verbose with Replay = Some <| Random.StdGen (1067203277,296886258);  }
+    let config = {Config.Verbose with MaxTest = 120  }
     type stateTest =
         static member ``test2`` = StateMachine.toProperty spec 
 

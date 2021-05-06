@@ -18,21 +18,36 @@ open Hopac
 [<EntryPoint>]
 let main argv =
     // Start testsuite
+    let r =  Docker.executeShellCommand "docker stop orbit"  |> Async.RunSynchronously
     let r =  Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit1 --rm -p8084:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit2 --rm -p8083:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit3 --rm -p8082:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit4 --rm -p8081:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit5 --rm -p8080:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
+    //let r =  Docker.executeShellCommand "docker run -d --name orbit1 --rm -p8084:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
+    //let r =  Docker.executeShellCommand "docker run -d --name orbit2 --rm -p8083:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
+    //let r =  Docker.executeShellCommand "docker run -d --name orbit3 --rm -p8082:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
+    //let r =  Docker.executeShellCommand "docker run -d --name orbit4 --rm -p8081:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
+   // let r =  Docker.executeShellCommand "docker run -d --name orbit5 --rm -p8080:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
 
     //Thread.Sleep 500
     testSuite.start
     
 
-    //let testData = Utilities.getTestData
-    //let s = Utilities.createFileModel testData "100" 15 "test1.txt"
-    //let g = Utilities.uploadFileModel testData "c" "100" 4  28 "637479675580000000"
-   // printf "s"
+    let testData = Utilities.getTestData
+    //let a = Utilities.moveFileModel testData "99" 40 99 "test1.txt" 34
+    //let b = Utilities.moveFileModel testData "100" 40 99 "test1.txt" 34
+    //let c = Utilities.moveFileModel testData "100" 3 99 "test1.txt" 34
+    //let d = Utilities.moveFileModel testData "100" 3 99 "test1.txt" 1
+    //let e = Utilities.moveFileModel testData "100" 3 16 "test1.txt" 1
+    //let f = Utilities.moveFileModel testData "100" 3 15 "test1.txt" 1
+
+   // let g = Utilities.createFileModel testData "100" 15 "test2.txt" //Success
+   // let u = Utilities.createFileModel g.Success.Value "100" 15 "test1.txt" 
+   // let f = Utilities.moveFileModel u.Success.Value  "100" 6 15 "test2.txt" 1 // conflict
+    //let c = Utilities.createFileModel f.Success.Value "100" 8 "test2.txt" // success
+    //let a = Utilities.createFileModel {f.Success.Value with currentFileId = 8} "100" 15 "test2.txt" // conflict
+    //let qq = Utilities.moveFileModel a.Success.Value  "100" 8 15 "test2.txt" 1 // success
+  //  let u = Utilities.createFileModel qq.Success.Value "100" 20 "test2.txt"
+   // let ux = Utilities.createFileModel testData  "100" 15 "test1.txt" 
+   // let ux = Utilities.moveFileModel ux.Success.Value  "100" 5 15 "test1.txt" 1
+    printf "s"
     //let s = API.createFile "100" "15" "test1.txt" "637479675580000000"
     //let v = API.createFile "100" "15" "test1.txt" "637479675580000000"
    // printf "%i" s
@@ -59,5 +74,5 @@ let main argv =
     
     
     //let r =  Docker.executeShellCommand "docker stop" |> Async.RunSynchronously
-
+ 
     0 // return an integer exit code
