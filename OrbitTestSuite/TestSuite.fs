@@ -135,7 +135,7 @@ module testSuite =
                         | None , Some newModel  ->   newModel
                         | Some error , Some newModel -> {newModel with sutResponse = Some(error) }
                 member op.Check (sut,model) =
-                    let sutResponse = API.createFile userId (string dirId) fileName "637479675580000000"
+                    let sutResponse = API.createFile docker.GetCurrent.address userId (string dirId) fileName "637479675580000000"
                     match sutResponse.Fail,sutResponse.Success , model.sutResponse with
                         | None , Some sut , Some model  -> match model with
                             | CreateFileSuccess m ->
@@ -270,11 +270,16 @@ module testSuite =
                 
                 
                 member __.Actual() =
+                    (*
                     let res1 = Docker.executeShellCommand "Docker stop orbit" |> Async.RunSynchronously
                     if (res1.ExitCode <> 0) then printf "ERROR %A - %A" res1.StandardError res1.StandardOutput
                     let res2 = Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest" |> Async.RunSynchronously
                     if (res2.ExitCode <> 0) then printf "ERROR %A - %A" res2.StandardError res2.StandardOutput
                     Thread.Sleep 7000
+                    *)
+                    Docker.executeShellCommand docker.GetCurrent.stopString |> Async.RunSynchronously
+                    Docker.executeShellCommand docker.GetCurrent.startString |> Async.RunSynchronously
+                    docker.Next
                     apiModel()
                 member __.Model() =
                     let model = {
@@ -388,7 +393,7 @@ module testSuite =
                 let fileDeleteGen = [Gen.map3 fileDelete user fileIdGen fileVersionGen ]
                 //let createDirectoryGen = [Gen.map3 createDirectory user dirIdGen fileNameGen]
              
-                let s = Gen.oneof (fileDeleteGen@createFileGen @ fileMetaInformationGen @ listFilesGen @ downloadFileGen @ uploadFileGen @ dirStrcutureGen @moveFileGen  @updateTimestampGen)
+                let s = Gen.oneof (createFileGen (*@ fileMetaInformationGen @ listFilesGen @ downloadFileGen @ uploadFileGen @ dirStrcutureGen @moveFileGen  @updateTimestampGen*))
                 let a = Arb.fromGen s
                 s
                 }

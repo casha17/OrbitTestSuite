@@ -156,9 +156,9 @@ module API =
     
 
     
-    let createFile userId parentId fileName fileTimestamp = 
+    let createFile docker userId parentId fileName fileTimestamp = 
         let result =
-            Request.createUrl Post (concatString ["http://localhost:8085/file?userId="; userId;  "&parentId=";  parentId; "&name="; fileName; "&timestamp="; fileTimestamp]) 
+            Request.createUrl Post (concatString [docker + "file?userId="; userId;  "&parentId=";  parentId; "&name="; fileName; "&timestamp="; fileTimestamp]) 
             |> getResponse
             |> run
         
