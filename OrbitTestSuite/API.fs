@@ -8,6 +8,7 @@ open Microsoft.FSharpLu.Json
 open FSharp.Json
 open Newtonsoft.Json
 open OrbitTestSuite.Models
+open OrbitTestSuite.Models.ApiResponseModels
 open OrbitTestSuite.Models.Model
 open OrbitTestSuite.CustomConverter
 module API =
@@ -139,6 +140,8 @@ module API =
             | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
             | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
 
+    let mapResponse (dirs:directoryStructureResponse list) =
+        dirs |> List.map (fun e -> {id = e.id; parentId = e.parentId; name = e.name; rootPath = e.rootPath; rootId = e.rootId; version = e.version}) 
     let directoryStructure userId =
         let config = JsonConfig.create(deserializeOption = DeserializeOption.RequireNull)
         
@@ -149,7 +152,7 @@ module API =
         match result.statusCode with
             | s when s = 200 ->
                 let res = Response.readBodyAsString result |> run
-                JsonConvert.DeserializeObject<ApiResponseModels.directoryStructure list >(res, new OptionConverter() ) |> createSuccess
+                JsonConvert.DeserializeObject<ApiResponseModels.directoryStructureResponse list >(res, new OptionConverter() ) |> mapResponse |> createSuccess
 
 
     let versionCheck userId clientVersion = 

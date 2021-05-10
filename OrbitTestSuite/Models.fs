@@ -38,6 +38,14 @@ module ApiResponseModels =
         name: string
         rootPath: string
         rootId: int
+        version: int
+    }
+    type directoryStructureResponse = {
+        id: int
+        parentId: int option
+        name: string
+        rootPath: string
+        rootId: int
         rootIsDefault: bool
         version: int
     }

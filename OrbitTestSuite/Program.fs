@@ -20,27 +20,21 @@ let main argv =
     // Start testsuite
    
     let r =  Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    (*
-    let r =  Docker.executeShellCommand "docker run -d --name orbit1 --rm -p8084:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit2 --rm -p8083:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit3 --rm -p8082:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit4 --rm -p8081:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-    let r =  Docker.executeShellCommand "docker run -d --name orbit5 --rm -p8080:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-*)
-    //Thread.Sleep 500
-    
-    //let s = API.directoryStructure "100"
-    
     testSuite.start
     
-
+    //let s = API.directoryStructure "100"
     let testData = Utilities.getTestData
-    let xxx = Utilities.createDirectoryModel testData "100" 18 "test1.txt"  1
-    let y = Utilities.moveFileModel xxx.Success.Value "100" 4 15 "test1.txt" 1
-   
-    let uu = Utilities.updateFileTimestampModel xxx.Success.Value "100" 2 1 "637479675580000000"
-    let a = Utilities.moveFileModel  uu.Success.Value "100" 2 15 "test2.txt" 2
-    let b = Utilities.fileDeleteModel testData "9999" 2 34
+    let xxx = Utilities.createDirectoryModel testData "100" 15 "test1.txt"  1
+    let y = Utilities.createFileModel xxx.Success.Value "100" 15 "test2.txt"
+    let a = Utilities.createFileModel y.Success.Value "100" 22 "test1.txt"
+    let b = Utilities.updateFileTimestampModel a.Success.Value "100" 6 1 "637479675580000000" 
+    let c = Utilities.updateFileTimestampModel b.Success.Value "100" 6 2 "637479675580000000" 
+    let d = Utilities.updateFileTimestampModel c.Success.Value "100" 6 3 "637479675580000000" 
+    let e = Utilities.updateFileTimestampModel d.Success.Value "100" 6 4 "637479675580000000" 
+    let f = Utilities.moveFileModel e.Success.Value "100" 6 15 "test1.txt" 5
+    let g = Utilities.listFilesModel e.Success.Value "100"
+  //  let a = Utilities.moveFileModel  uu.Success.Value "100" 2 15 "test2.txt" 2
+   // let b = Utilities.fileDeleteModel testData "9999" 2 34
     printf "s"
      (*
     let c = Utilities.fileDeleteModel testData "100" 2 1

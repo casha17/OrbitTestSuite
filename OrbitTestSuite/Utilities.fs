@@ -487,11 +487,11 @@ module Utilities =
                                 match tryGetUser model.users userId with
                                 | None -> {Fail = Some(Unauthorized); Success = Some(model)}
                                 | Some user ->
-                                    let newDirectoryStructure = {id = model.currentDirId; name = dirName; rootPath = ""; rootId = dirId; rootIsDefault = true; version = 1; parentId = Some(dirId) }
-                                    let newDirectoryStructure1 = {id = model.currentDirId; name = dirName; rootPath = ""; rootId = dirId; rootIsDefault = false; version = 1; parentId = Some(dirId) }
+                                    let newDirectoryStructure = {id = model.currentDirId; name = dirName; rootPath = ""; rootId = dirId; version = 1; parentId = Some(dirId) }
+                                   
                                     let users = model.users |> List.map (fun e ->
                                       if (dirIsShared e.directoryVersions dirId && e.userId = userId)
-                                      then {e with dirStructures = newDirectoryStructure1::e.dirStructures}
+                                      then {e with dirStructures = newDirectoryStructure::e.dirStructures}
                                       elif (dirIsShared e.directoryVersions dirId )
                                       then  {e with dirStructures = newDirectoryStructure::e.dirStructures}
                                       else e)
@@ -577,16 +577,16 @@ module Utilities =
         file3Res@file2Res@file1Res
      *) 
     let getTestData =
-           {
+       {
                         users = [
                             {
                                 userId = "100"
                                 listFiles = [{id = 2; name="README.txt";parentId = 15;version=1;versionChanged=1;timestamp="637479675580000000"}]
                                 directoryVersions = [{id=15; version = 1};{id=17;version=1};{id=18;version=1}]
                                 dirStructures = [
-                                    {id=15;parentId=None;name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1}
-                                    {id=17;parentId=None;name="";rootPath="/Projects/Project 1/";rootId=17;rootIsDefault=false;version=1}
-                                    {id=18;parentId=None;name="";rootPath="/Projects/Project 2/";rootId=18;rootIsDefault=false;version=1}
+                                    {id=15;parentId=None;name="";rootPath="/Users/rw/";rootId=15;version=1}
+                                    {id=17;parentId=None;name="";rootPath="/Projects/Project 1/";rootId=17;version=1}
+                                    {id=18;parentId=None;name="";rootPath="/Projects/Project 2/";rootId=18;version=1}
                                 ]
                             };
                               {
@@ -595,9 +595,9 @@ module Utilities =
                                 listFiles = [{id = 3; name="README.txt";parentId = 16;version=1;versionChanged=1;timestamp="637479675580000000"}]
                                 directoryVersions = [{id=16; version = 1};{id=17;version=1};{id=18;version=1}]
                                 dirStructures = [
-                                    {id=16;parentId=None;name="";rootPath="/Users/ro/";rootId=16;rootIsDefault=true;version=1}
-                                    {id=17;parentId=None;name="";rootPath="/Projects/Project 1/";rootId=17;rootIsDefault=false;version=1}
-                                    {id=18;parentId=None;name="";rootPath="/Projects/Project 2/";rootId=18;rootIsDefault=false;version=1}
+                                    {id=16;parentId=None;name="";rootPath="/Users/ro/";rootId=16;version=1}
+                                    {id=17;parentId=None;name="";rootPath="/Projects/Project 1/";rootId=17;version=1}
+                                    {id=18;parentId=None;name="";rootPath="/Projects/Project 2/";rootId=18;version=1}
                                 ]
                             }
                         ]
@@ -618,27 +618,27 @@ module Utilities =
                         
                         
                         directories = [
-                            {id=1;parentId=None;name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=10;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=13;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                    {id=21;parentId=Some(13);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=3;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=8;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=2;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                    {id=17;parentId=Some(2);name="";rootPath="/Projects/Project 1/";rootId=17;rootIsDefault=false;version=1};
-                                    {id=18;parentId=Some(2);name="";rootPath="/Projects/Project 2/";rootId=18;rootIsDefault=false;version=1};
-                                {id=4;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                    {id=5;parentId=Some(4);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                        {id=6;parentId=Some(5);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                        {id=7;parentId=Some(5);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=12;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=9;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                    {id=20;parentId=Some(9);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=11;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                {id=14;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                    {id=19;parentId=Some(14);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                    {id=16;parentId=Some(14);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
-                                    {id=15;parentId=Some(14);name="";rootPath="/Users/rw/";rootId=15;rootIsDefault=true;version=1};
+                            {id=1;parentId=None;name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=10;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=13;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                    {id=21;parentId=Some(13);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=3;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=8;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=2;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                    {id=17;parentId=Some(2);name="";rootPath="/Projects/Project 1/";rootId=17;version=1};
+                                    {id=18;parentId=Some(2);name="";rootPath="/Projects/Project 2/";rootId=18;version=1};
+                                {id=4;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                    {id=5;parentId=Some(4);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                        {id=6;parentId=Some(5);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                        {id=7;parentId=Some(5);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=12;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=9;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                    {id=20;parentId=Some(9);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=11;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                {id=14;parentId=Some(1);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                    {id=19;parentId=Some(14);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                    {id=16;parentId=Some(14);name="";rootPath="/Users/rw/";rootId=15;version=1};
+                                    {id=15;parentId=Some(14);name="";rootPath="/Users/rw/";rootId=15;version=1};
 
                         ]
                         
@@ -650,4 +650,5 @@ module Utilities =
                         currentUpdatedDirId = 0
                         rights = [{dir = "17";rights = R; user= "101"}; {dir = "18";rights = R; user = "101"}; {dir = "9"; rights= R; user = "101"}; {dir = "16"; rights=CRUD;user="101"}; {dir = "20";rights=R;user="101"}
                                   {dir = "17";rights = CRUD; user= "100"}; {dir = "18";rights = CRUD; user = "100"}; {dir = "9"; rights= CRUD; user = "100"}; {dir = "15"; rights=CRUD;user="100"};{dir = "20";rights=CRUD;user="100"}]
+                    
                     }
