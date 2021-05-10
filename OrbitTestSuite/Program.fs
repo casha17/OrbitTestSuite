@@ -18,21 +18,31 @@ open Hopac
 [<EntryPoint>]
 let main argv =
     // Start testsuite
-    //let r =  Docker.executeShellCommand "docker stop orbit"  |> Async.RunSynchronously
+   
     let r =  Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
+    (*
     let r =  Docker.executeShellCommand "docker run -d --name orbit1 --rm -p8084:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
     let r =  Docker.executeShellCommand "docker run -d --name orbit2 --rm -p8083:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
     let r =  Docker.executeShellCommand "docker run -d --name orbit3 --rm -p8082:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
     let r =  Docker.executeShellCommand "docker run -d --name orbit4 --rm -p8081:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
     let r =  Docker.executeShellCommand "docker run -d --name orbit5 --rm -p8080:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
-
+*)
     //Thread.Sleep 500
+    
+    //let s = API.directoryStructure "100"
+    
     testSuite.start
     
 
     let testData = Utilities.getTestData
-    let a = Utilities.fileDeleteModel testData "9999" 99 34
+    let xxx = Utilities.createDirectoryModel testData "100" 18 "test1.txt"  1
+    let y = Utilities.moveFileModel xxx.Success.Value "100" 4 15 "test1.txt" 1
+   
+    let uu = Utilities.updateFileTimestampModel xxx.Success.Value "100" 2 1 "637479675580000000"
+    let a = Utilities.moveFileModel  uu.Success.Value "100" 2 15 "test2.txt" 2
     let b = Utilities.fileDeleteModel testData "9999" 2 34
+    printf "s"
+     (*
     let c = Utilities.fileDeleteModel testData "100" 2 1
     let d = Utilities.fileDeleteModel c.Success.Value "100" 4 1
     let e = Utilities.moveFileModel testData "100" 3 16 "test1.txt" 1
@@ -74,5 +84,6 @@ let main argv =
     
     
     //let r =  Docker.executeShellCommand "docker stop" |> Async.RunSynchronously
- 
+    //let r =  Docker.executeShellCommand "docker stop orbit"  |> Async.RunSynchronously
+    *)
     0 // return an integer exit code

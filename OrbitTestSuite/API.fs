@@ -1,13 +1,20 @@
 namespace OrbitTestSuite.API
 
+open System.Text.Json.Serialization
+open System.Text.Json.Serialization
 open Hopac
 open HttpFs.Client
-
+open Microsoft.FSharpLu.Json
 open FSharp.Json
+open Newtonsoft.Json
 open OrbitTestSuite.Models
 open OrbitTestSuite.Models.Model
+open OrbitTestSuite.CustomConverter
 module API =
 
+    let settings = new JsonSerializerSettings()
+    settings.Converters.Add(IdiomaticDuConverter())
+    
     let concatString x = 
         String.concat "" x
     
@@ -132,13 +139,17 @@ module API =
             | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
             | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
 
-    let directoryStructure userId = 
+    let directoryStructure userId =
+        let config = JsonConfig.create(deserializeOption = DeserializeOption.RequireNull)
+        
         let result =
             Request.createUrl Get (concatString ["http://localhost:8085/dir/structure?userId="; userId;])
             |> getResponse
             |> run
         match result.statusCode with
-            | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<List<ApiResponseModels.directoryStructure>> |> createSuccess
+            | s when s = 200 ->
+                let res = Response.readBodyAsString result |> run
+                JsonConvert.DeserializeObject<ApiResponseModels.directoryStructure list >(res, new OptionConverter() ) |> createSuccess
 
 
     let versionCheck userId clientVersion = 
@@ -156,9 +167,9 @@ module API =
     
 
     
-    let createFile docker userId parentId fileName fileTimestamp = 
+    let createFile userId parentId fileName fileTimestamp = 
         let result =
-            Request.createUrl Post (concatString [docker + "file?userId="; userId;  "&parentId=";  parentId; "&name="; fileName; "&timestamp="; fileTimestamp]) 
+            Request.createUrl Post (concatString [ "http://localhost:8085/file?userId="; userId;  "&parentId=";  parentId; "&name="; fileName; "&timestamp="; fileTimestamp]) 
             |> getResponse
             |> run
         
@@ -200,9 +211,9 @@ module API =
             | s when s = 409 ->
                 let res = Response.readBodyAsString result |> run
                 {Fail = Some(Conflict); Success = None}
-            | _  ->
+            | s when s = 500  ->
                 let res = Response.readBodyAsString result |> run
-                {Fail = None; Success = None}
+                {Fail = Some(InternalServerError); Success = None}
             
     let updateFileTimestamp userId fileId fileVersion fileTimestamp = 
         let result =
@@ -273,13 +284,18 @@ module API =
         
         match result.statusCode with
             | s when s = 200 -> Response.readBodyAsString result |> run |> Json.deserialize<ApiResponseModels.directoryCreate> |> createSuccess
-            | s when s = 401 -> Response.readBodyAsString result |> run |> createFailNotAuthorized 401
+            | s when s = 401 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(Unauthorized); Success = None}
             | s when s = 404 ->
                 let res = Response.readBodyAsString result |> run
                 {Fail = Some(NotFound); Success = None}
-            | s when s = 406 -> Response.readBodyAsString result |> run |> createFailFilePathTooLong 406
-            | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
-
+            | s when s = 409 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(Conflict); Success = None}
+            | s when s = 500 ->
+                let res = Response.readBodyAsString result |> run
+                {Fail = Some(InternalServerError); Success = None}
 
     let directoryMove userId directoryId directoryVersion directoryName parentDirectoryId parentDirectoryVersion = 
         let result =

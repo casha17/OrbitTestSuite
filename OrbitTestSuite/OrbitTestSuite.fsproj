@@ -6,6 +6,7 @@
   <ItemGroup>
     <Compile Include="Models.fs" />
     <Compile Include="DockerIntegration.fs" />
+    <Compile Include="CustomConverter.fs" />
     <Compile Include="API.fs" />
     <Compile Include="ApiModel.fs" />
     <Compile Include="Utilities.fs" />
@@ -15,10 +16,20 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.SimpleHttp" Version="3.0.0" />
+    <PackageReference Include="FAKE" Version="5.16.0" />
+    <PackageReference Include="FAKE.Core" Version="5.16.0" />
+    <PackageReference Include="Fake.Core.Process" Version="5.20.4" />
+    <PackageReference Include="Fake.Core.Tasks" Version="5.20.4" />
+    <PackageReference Include="FifteenBelow.Json" Version="0.2.0.12" />
     <PackageReference Include="FsCheck" Version="2.15.1" />
     <PackageReference Include="FSharp.Json" Version="0.4.0" />
     <PackageReference Include="FSharp.Net.Http" Version="1.0.2" />
     <PackageReference Include="Hopac" Version="0.5.0" />
     <PackageReference Include="Http.fs" Version="5.4.0" />
+    <PackageReference Include="Microsoft.FSharpLu.Json" Version="0.11.6" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="runtimeconfig.template.json" />
   </ItemGroup>
 </Project>

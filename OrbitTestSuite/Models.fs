@@ -41,6 +41,9 @@ module ApiResponseModels =
         rootIsDefault: bool
         version: int
     }
+    type test = {
+       __ : directoryStructure list 
+    }
 
     type createFile = {
         id: string
@@ -170,6 +173,8 @@ module Model =
                 | UploadFileSuccess of ApiResponseModels.fileUpload
                 | UpdateTimestampSuccess of ApiResponseModels.updateFileTimeStamp
                 | DeleteFileSuccess of ApiResponseModels.fileDelete
+                | CreateDirectorySucces of ApiResponseModels.directoryCreate
+                | InternalServerError
                 | NotFound
                 | Conflict
                 | Unauthorized
@@ -209,8 +214,9 @@ module Model =
                 let files = (t.files |> List.map (fun e -> "\n\t id:" + (string e.metadata.id) + " parentId:" +  (string e.metadata.parentId) + " version:" + (string e.metadata.version) + " content:"  + e.content.Replace("\n" , "") )) |> List.fold (+) "" 
                 sprintf "\nfiles:%s - currentFileId:%i  \n\n" files  t.currentFileId
                 *)
+                //let dirs = (t.directories |> List.map (fun e -> "[id:" + (string e.id) + "version:" + ( string e.version) + "parentId:" + ( string e.parentId) + "]"))  |> List.fold (+) ""
                 let files = (t.files |> List.map (fun e -> "[id:" + (string e.metadata.id) + " version:" + (string e.metadata.version) + "]"  )) |> List.fold (+) ""
-                sprintf "files:%s - currentFileId:%i" files  t.currentFileId
+                sprintf "files:%s - currentFileId:%i - currentDirId:%i" files   t.currentFileId t.currentDirId
             member t.DisplayValue = t.ToString()
                 
         type TestResponse = {
