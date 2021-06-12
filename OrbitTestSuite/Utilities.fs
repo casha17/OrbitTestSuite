@@ -194,7 +194,24 @@ module Utilities =
         let rights =  tryGetRights model.rights (string dirId) userId
         let fileExists = tryGetFileByNameAndDir model.files fileName dirId
         match rights, parentDir, fileExists with
-            | None , Some dir , None -> {Fail= Some(Unauthorized); Success= Some({model with currentFileId = model.currentFileId+1})}
+            | None , Some dir , None ->
+                    let newMetadata = {id = model.currentFileId; parentId =  dirId; version = 1; versionChanged = 1; timestamp = "637479675580000000"; name=fileName}
+                    let newFile = {content = ""; metadata = newMetadata}
+                    let user = model.users |> List.find (fun e -> e.userId = userId) 
+                    let dirCheckedOut = parentIsCheckedOut user.directoryVersions model.directories dirId      
+                    match dirCheckedOut with
+                    | false ->  {Fail=None; Success = Some({model with  files = newFile::model.files; sutResponse = Some(CreateFileSuccess{id = string model.currentFileId; version = 1; name=fileName; timestamp ="637479675580000000" }) ; currentFileId = model.currentFileId+1}) }    
+                    | true ->
+                        let users =  model.users |> List.map (fun e ->
+                          if (e.userId = userId)
+                          then {e with listFiles = newMetadata::e.listFiles}
+                          else e )
+                        if (model.currentFileId <= 6)  // Bug, by not creating file 
+                        then 
+                        {Fail=None; Success = Some({model with users = users; files = newFile::model.files; sutResponse = Some(CreateFileSuccess{id = string model.currentFileId; version = 1; name=fileName; timestamp ="637479675580000000" }) ; currentFileId = model.currentFileId+1}) }
+                        else
+                            {Fail=None; Success = Some({model with users = users; files = model.files; sutResponse = Some(CreateFileSuccess{id = string model.currentFileId; version = 1; name=fileName; timestamp ="637479675580000000" }) ; currentFileId = model.currentFileId+1}) }
+
             | None , Some dir , Some file -> {Fail= Some(Conflict); Success= Some({model with currentFileId = model.currentFileId+1})}
             | None, None , None -> {Fail= Some(NotFound); Success= Some({model with currentFileId = model.currentFileId})}
             | Some permission , Some parentDir , Some file -> {Fail= Some(Conflict); Success= Some({model with currentFileId = model.currentFileId+1})}
@@ -481,7 +498,7 @@ module Utilities =
                             let fileExists = tryGetFileByNameAndDir model.files dirName dirId
                             let dirExistsIn = tryGetDirectoryByNameAndDir model.directories dirId dirName
                             match fileExists , dirExistsIn with
-                            | Some file , None -> {Fail = Some(InternalServerError); Success = Some({model with currentDirId = model.currentDirId+1})}
+                            | Some file , None -> {Fail = Some(Conflict); Success = Some({model with currentDirId = model.currentDirId+1})}
                             | None , Some dir -> {Fail = Some(Conflict); Success = Some({model with currentDirId = model.currentDirId+1})}
                             | None , None ->
                                 match tryGetUser model.users userId with

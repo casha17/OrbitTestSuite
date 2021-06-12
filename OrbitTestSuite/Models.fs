@@ -168,7 +168,6 @@ module Model =
         }
         type User =
             {
-                (*userFiles: Map<string,permission>*)
                 userId: string
                 directoryVersions: ApiResponseModels.directoryVersion list
                 listFiles: ApiResponseModels.metadata list
@@ -234,7 +233,7 @@ module Model =
         
       
             
-        type listFileResponse<'a> = {
+        type Response<'a> = {
             Fail: ResponseCode option
             Success : 'a option
         }

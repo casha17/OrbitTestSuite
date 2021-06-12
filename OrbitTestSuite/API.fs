@@ -140,7 +140,7 @@ module API =
             | s when s = 409 -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
             | _  -> Response.readBodyAsString result |> run |> createFailFileAlreadyExists 409
 
-    let mapResponse (dirs:directoryStructureResponse list) =
+    let mapResponse (dirs:directoryStructureResponse list)  =
         dirs |> List.map (fun e -> {id = e.id; parentId = e.parentId; name = e.name; rootPath = e.rootPath; rootId = e.rootId; version = e.version}) 
     let directoryStructure userId =
         let config = JsonConfig.create(deserializeOption = DeserializeOption.RequireNull)
@@ -187,7 +187,6 @@ module API =
             | s when s = 409 ->
                 let res = Response.readBodyAsString result |> run
                 {Fail = Some(Conflict); Success = None}
-            
             | _  ->
                 let res = Response.readBodyAsString result |> run
                 {Fail = None; Success = None}

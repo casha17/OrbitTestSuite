@@ -2,6 +2,7 @@
 
 open System.Diagnostics
 open System.Threading
+open FsCheck
 open Hopac.Core
 open Hopac.Extensions
 open OrbitTestSuite.API
@@ -21,8 +22,9 @@ let main argv =
    
     let r =  Docker.executeShellCommand "docker run -d --name orbit --rm -p8085:8085 -eCLICOLOR_FORCE=2 cr.orbit.dev/sdu/filesync-server:latest"  |> Async.RunSynchronously
     testSuite.start
-    
+    let testData = Utilities.getTestData
     //let s = API.directoryStructure "100"
+    (*
     let testData = Utilities.getTestData
     let xxx = Utilities.createDirectoryModel testData "100" 15 "test1.txt"  1
     let y = Utilities.createFileModel xxx.Success.Value "100" 15 "test2.txt"
@@ -80,4 +82,11 @@ let main argv =
     //let r =  Docker.executeShellCommand "docker stop" |> Async.RunSynchronously
     //let r =  Docker.executeShellCommand "docker stop orbit"  |> Async.RunSynchronously
     *)
+    *)
+  
+    let mutable fileIds = Utilities.getAllFileIds testData.files
+    let gen = Gen.frequency [(2 ,Gen.elements fileIds); (1 ,Arb.generate<int>); (1 , Gen.choose(-1,1))]
+    let result = gen.Sample (2,100)
+    printf "%A" result
+
     0 // return an integer exit code
